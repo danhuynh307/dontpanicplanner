@@ -147,6 +147,27 @@ public class Task {
         return s == null || s.isBlank();
     }
 
+    // ── Getters ───────────────────────────────────────────────
+
+    public Long getId()              { return id; }
+    public String getName()          { return name; }
+    public String getTaskType()      { return taskType; }
+    public Double getEstimatedTime() { return estimatedTime; }
+    public LocalDate getDueDate()    { return dueDate; }
+    public Integer getGradeWeight()  { return gradeWeight; }
+    public Double getCurrentGrade()  { return currentGrade; }
+    public Integer getPriorityScore(){ return priorityScore; }
+
+    // ── Setters ───────────────────────────────────────────────
+
+    public void setId(Long id)                      { this.id = id; }
+    public void setName(String name)                { this.name = name; }
+    public void setTaskType(String taskType)        { this.taskType = taskType; }
+    public void setEstimatedTime(Double t)          { this.estimatedTime = t; }
+    public void setDueDate(LocalDate dueDate)       { this.dueDate = dueDate; }
+    public void setGradeWeight(Integer gradeWeight) { this.gradeWeight = gradeWeight; }
+    public void setCurrentGrade(Double currentGrade){ this.currentGrade = currentGrade; }
+    public void setPriorityScore(Integer score)     { this.priorityScore = score; }
 
     @Override
     public String toString() {
