@@ -2,8 +2,8 @@ import React, { useState } from "react";
 
 function CreateTaskPanel({ addTask }) {
   const [formData, setFormData] = useState({
-    title: "",
-    type: "Assignment",
+    name: "",
+    taskType: "Assignment",
     estimatedTime: 1,
     dueDate: "",
     gradeWeight: 10,
@@ -16,13 +16,20 @@ function CreateTaskPanel({ addTask }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addTask(formData);
+
+    const cleanedData = {
+      ...formData,
+      estimatedTime: Number(formData.estimatedTime),
+      gradeWeight: Number(formData.gradeWeight),
+    };
+
+    await addTask(cleanedData);
 
     setFormData({
-      title: "",
-      type: "Assignment",
+      name: "",
+      taskType: "Assignment",
       estimatedTime: 1,
       dueDate: "",
       gradeWeight: 10,
@@ -37,16 +44,16 @@ function CreateTaskPanel({ addTask }) {
         <label>Task Name</label>
         <input
           type="text"
-          name="title"
+          name="name"
           placeholder="Task title"
-          value={formData.title}
+          value={formData.name}
           onChange={handleChange}
         />
 
         <label>Task Type</label>
         <select
-          name="type"
-          value={formData.type}
+          name="taskType"
+          value={formData.taskType}
           onChange={handleChange}
         >
           <option>Assignment</option>
