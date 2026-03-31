@@ -13,25 +13,35 @@ public class TaskController {
 
     // In-memory store using the project's custom data structure
     private final TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
+    private final PriorityScoreService priorityScoreService;
+
+    public TaskController(PriorityScoreService priorityScoreService) {
+        this.priorityScoreService = priorityScoreService;
+    }
 
     // ── CREATE ────────────────────────────────────────────────
     // POST /api/tasks
-    // Accepts a Task object in the request body and adds it to the store.
+    // Accepts a Task object in the request body, calculates priority, and adds it.
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
+        priorityScoreService.applyPriorityScore(task);
         taskStore.add(task);
         return ResponseEntity.ok(task);
     }
 
     // ── READ (all) ────────────────────────────────────────────
     // GET /api/tasks
-    // Returns all tasks currently in the store.
+    // Returns all tasks currently in the store, with fresh priority scores.
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
         List<Task> result = new ArrayList<>();
+
         for (int i = 0; i < taskStore.size(); i++) {
-            result.add(taskStore.get(i));
+            Task task = taskStore.get(i);
+            priorityScoreService.applyPriorityScore(task);
+            result.add(task);
         }
+
         return ResponseEntity.ok(result);
     }
 
@@ -43,7 +53,10 @@ public class TaskController {
         if (index < 0 || index >= taskStore.size()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(taskStore.get(index));
+
+        Task task = taskStore.get(index);
+        priorityScoreService.applyPriorityScore(task);
+        return ResponseEntity.ok(task);
     }
 
     // ── UPDATE ────────────────────────────────────────────────
@@ -54,6 +67,8 @@ public class TaskController {
         if (index < 0 || index >= taskStore.size()) {
             return ResponseEntity.notFound().build();
         }
+
+        priorityScoreService.applyPriorityScore(updatedTask);
         taskStore.set(index, updatedTask);
         return ResponseEntity.ok(updatedTask);
     }
@@ -66,6 +81,7 @@ public class TaskController {
         if (index < 0 || index >= taskStore.size()) {
             return ResponseEntity.notFound().build();
         }
+
         taskStore.remove(index);
         return ResponseEntity.noContent().build();
     }
