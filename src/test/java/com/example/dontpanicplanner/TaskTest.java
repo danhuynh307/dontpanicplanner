@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskTest {
 
     @Test
-    void fullConstructorShouldSetAllFields() {
+    void testConstructorAllFields() {
         LocalDate dueDate = LocalDate.of(2026, 3, 25);
 
         Task task = new Task(
@@ -32,7 +32,7 @@ class TaskTest {
     }
 
     @Test
-    void constructorWithoutPriorityShouldLeavePriorityNull() {
+    void nonPriorityTaskTest() {
         Task task = new Task(
                 "Homework 3",
                 "Assignment",
@@ -47,7 +47,7 @@ class TaskTest {
     }
 
     @Test
-    void minimalConstructorShouldSetOnlyNameAndDueDate() {
+    void constructorNoFieldsTest() {
         Task task = new Task("Read chapter 4", LocalDate.of(2026, 4, 1));
 
         assertEquals("Read chapter 4", task.getName());
@@ -60,7 +60,7 @@ class TaskTest {
     }
 
     @Test
-    void settersShouldUpdateFields() {
+    void testSetter() {
         Task task = new Task();
 
         task.setId(99L);
@@ -83,7 +83,7 @@ class TaskTest {
     }
 
     @Test
-    void toCSVShouldExportNormalValues() {
+    void CSVexportTest() {
         Task task = new Task(
                 "Project",
                 "Essay",
@@ -98,14 +98,14 @@ class TaskTest {
     }
 
     @Test
-    void toCSVShouldLeaveNullFieldsBlank() {
+    void CSVwithNullFields() {
         Task task = new Task("Quick task", LocalDate.of(2026, 4, 2));
 
         assertEquals("Quick task,,,2026-04-02,,,", task.toCSV());
     }
 
     @Test
-    void toCSVShouldEscapeCommaAndQuotes() {
+    void CSVformattingTest() {
         Task task = new Task(
                 "Read \"important\", notes",
                 "Study",
@@ -120,7 +120,7 @@ class TaskTest {
     }
 
     @Test
-    void fromCSVShouldParseValidLine() {
+    void CSVparsingTest() {
         String line = "Project,Essay,4.0,2026-04-05,25,90.0,7";
 
         Task task = Task.fromCSV(line);
@@ -135,12 +135,12 @@ class TaskTest {
     }
 
     @Test
-    void fromCSVShouldParseBlankFieldsAsNull() {
-        String line = "Quick task,,,2026-04-02,,,";
+    void CSVblankInputsTest() {
+        String line = "Temp task,,,2026-04-02,,,";
 
         Task task = Task.fromCSV(line);
 
-        assertEquals("Quick task", task.getName());
+        assertEquals("Temp task", task.getName());
         assertEquals("", task.getTaskType());
         assertNull(task.getEstimatedTime());
         assertEquals(LocalDate.of(2026, 4, 2), task.getDueDate());
@@ -150,7 +150,7 @@ class TaskTest {
     }
 
     @Test
-    void fromCSVShouldHandleQuotedCommaAndQuotes() {
+    void fromCSVwithSpecialChars() {
         String line = "\"Read \"\"important\"\", notes\",Study,1.5,2026-04-03,10,95.0,3";
 
         Task task = Task.fromCSV(line);
@@ -161,7 +161,7 @@ class TaskTest {
     }
 
     @Test
-    void fromCSVShouldThrowIfTooFewColumns() {
+    void CSVerrorTest() {
         String badLine = "OnlyName,OnlyType";
 
         IllegalArgumentException ex = assertThrows(
@@ -173,7 +173,7 @@ class TaskTest {
     }
 
     @Test
-    void toCSVAndFromCSVShouldRoundTrip() {
+    void toAndFromCSV() {
         Task original = new Task(
                 "Capstone draft",
                 "Paper",

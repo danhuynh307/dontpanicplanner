@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 function DashboardCards() {
 
   const navigate = useNavigate();
-
+    // cards at top that are clickable, redirect to pages
   return (
     <div className="top-cards">
 
