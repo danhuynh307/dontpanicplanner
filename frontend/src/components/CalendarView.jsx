@@ -3,15 +3,14 @@ import React, { useMemo, useState } from "react";
 function CalendarView({ selectedDate, setSelectedDate, tasks }) {
   const today = new Date();
 
-  const getStartOfWeek = (date) => {
+  const getCalendarStart = (date) => {
     const d = new Date(date);
-    const day = d.getDay();
-    d.setDate(d.getDate() - day);
+    d.setDate(d.getDate() - 7);
     d.setHours(0, 0, 0, 0);
     return d;
   };
 
-  const [calendarStart, setCalendarStart] = useState(getStartOfWeek(today));
+  const [calendarStart, setCalendarStart] = useState(getCalendarStart(today));
 
   const formatDateToYYYYMMDD = (date) => {
     if (!date) return "";
@@ -72,8 +71,21 @@ function CalendarView({ selectedDate, setSelectedDate, tasks }) {
 
   return (
     <div className="calendar-panel">
+
       <div className="calendar-header">
         <h2>{formatHeader()}</h2>
+        <div className="calendar-legend">
+            <div className="legend-item">
+              <span className="legend-box current-day-box"></span>
+              <span>Current day</span>
+            </div>
+
+            <div className="legend-item">
+              <span className="legend-box selected-day-box"></span>
+              <span>Selected day</span>
+            </div>
+          </div>
+
         <div className="calendar-nav">
           <button onClick={handlePrev}>{"<"}</button>
           <button onClick={handleNext}>{">"}</button>

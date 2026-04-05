@@ -218,3 +218,41 @@ body {
   cursor: pointer;
   font-size: 12px;
 }
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.legend-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: white;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.current-day-box {
+  border: 2px solid #f1c40f;
+}
+
+.selected-day-box {
+  border: 2px solid #2ecc71;
+}
