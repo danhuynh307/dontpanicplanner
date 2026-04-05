@@ -1,98 +1,80 @@
-import React, { useMemo, useState, useEffect } from "react";
-import CalendarView from "../components/CalendarView";
-import CreateTaskPanel from "../components/CreateTaskPanel";
-import TaskListPanel from "../components/TaskListPanel";
-import { getTasks, createTask } from "../services/taskService";
+import React, { useEffect, useState } from "react";
+import WeeklyTaskList from "../components/WeeklyTaskList";
+import WeeklyCalendarView from "../components/WeeklyCalendarView";
+import { fetchWeeklySchedule } from "../services/scheduleService";
+import { getTasks } from "../services/taskService";
+import "../styles/WeeklySchedule.css";
 
 function WeeklySchedule() {
+  const getStartOfWeek = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const formatDateToYYYYMMDD = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [weekStartDate, setWeekStartDate] = useState(getStartOfWeek(new Date()));
   const [tasks, setTasks] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [showAllTasks, setShowAllTasks] = useState(false);
+  const [scheduleBlocks, setScheduleBlocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadPageData = async () => {
+    try {
+      setLoading(true);
+
+      const [taskData, scheduleData] = await Promise.all([
+        getTasks(),
+        fetchWeeklySchedule(formatDateToYYYYMMDD(weekStartDate)),
+      ]);
+
+      setTasks(taskData || []);
+      setScheduleBlocks(scheduleData.blocks || []);
+    } catch (error) {
+      console.error("Error loading weekly schedule page:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadTasks() {
-      try {
-        const data = await getTasks();
-        setTasks(data);
-      } catch (error) {
-        console.error("Failed to load tasks:", error);
-      }
-    }
+    loadPageData();
+  }, [weekStartDate]);
 
-    loadTasks();
-  }, []);
-
-  const normalizeDate = (value) => {
-    if (!value) return "";
-
-    if (typeof value === "string") {
-      if (value.includes("T")) {
-        return value.split("T")[0];
-      }
-
-      if (value.includes("/")) {
-        const [month, day, year] = value.split("/");
-        return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      }
-
-      return value;
-    }
-
-    if (typeof value === "object" && value.year && value.month && value.day) {
-      return `${value.year}-${String(value.month).padStart(2, "0")}-${String(value.day).padStart(2, "0")}`;
-    }
-
-    if (value instanceof Date) {
-      const year = value.getFullYear();
-      const month = String(value.getMonth() + 1).padStart(2, "0");
-      const day = String(value.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
-
-    return "";
+  const handlePrevWeek = () => {
+    const newDate = new Date(weekStartDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setWeekStartDate(newDate);
   };
 
-  const handleAddTask = async (taskData) => {
-    try {
-      const createdTask = await createTask(taskData);
-      setTasks((prevTasks) => [...prevTasks, createdTask]);
-    } catch (error) {
-      console.error("Failed to create task:", error);
-    }
+  const handleNextWeek = () => {
+    const newDate = new Date(weekStartDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setWeekStartDate(newDate);
   };
-
-  const handleSelectDate = (dateObj) => {
-    setSelectedDate(dateObj);
-    setShowAllTasks(false);
-  };
-
-  const displayedTasks = useMemo(() => {
-    if (showAllTasks) return tasks;
-    if (!selectedDate) return [];
-
-    const selectedDateString = normalizeDate(selectedDate);
-
-    return tasks.filter((task) => {
-      const taskDateString = normalizeDate(task.dueDate);
-      return taskDateString === selectedDateString;
-    });
-  }, [tasks, selectedDate, showAllTasks]);
 
   return (
-    <div className="weekly-schedule">
-      <CalendarView
-        selectedDate={selectedDate}
-        setSelectedDate={handleSelectDate}
-      />
-
-      <CreateTaskPanel addTask={handleAddTask} />
-
-      <TaskListPanel
-        tasks={displayedTasks}
-        selectedDate={selectedDate}
-        showAllTasks={showAllTasks}
-        onToggleShowAll={() => setShowAllTasks((prev) => !prev)}
-      />
+    <div className="weekly-schedule-page">
+      {loading ? (
+        <div className="weekly-loading">Loading weekly schedule...</div>
+      ) : (
+        <>
+          <WeeklyTaskList tasks={tasks} />
+          <WeeklyCalendarView
+            weekStartDate={weekStartDate}
+            blocks={scheduleBlocks}
+            onPrevWeek={handlePrevWeek}
+            onNextWeek={handleNextWeek}
+          />
+        </>
+      )}
     </div>
   );
 }

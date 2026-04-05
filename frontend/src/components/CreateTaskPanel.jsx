@@ -18,6 +18,7 @@ function CreateTaskPanel({ addTask, selectedDate }) {
     estimatedTime: 1,
     dueDate: formatDateToYYYYMMDD(selectedDate),
     gradeWeight: 10,
+    currentGrade: 0,
   });
 
   useEffect(() => {
@@ -51,6 +52,7 @@ function CreateTaskPanel({ addTask, selectedDate }) {
       ...formData,
       estimatedTime: Number(formData.estimatedTime),
       gradeWeight: Number(formData.gradeWeight),
+      currentGrade: Number(formData.currentGrade),
     };
 
     await addTask(cleanedData);
@@ -61,6 +63,7 @@ function CreateTaskPanel({ addTask, selectedDate }) {
       estimatedTime: 1,
       dueDate: formatDateToYYYYMMDD(selectedDate),
       gradeWeight: 10,
+      currentGrade: 0,
     });
   };
 
@@ -114,6 +117,15 @@ function CreateTaskPanel({ addTask, selectedDate }) {
           name="gradeWeight"
           value={formData.gradeWeight}
           onChange={handleChange}
+        />
+
+        <label>Current Grade (%)</label>
+        <input
+          type="number"
+          name="currentGrade"
+          value={formData.currentGrade}
+          onChange={handleChange}
+          min="0"
         />
 
         <button type="submit">Add Task</button>
