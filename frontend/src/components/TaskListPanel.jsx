@@ -14,8 +14,8 @@ function TaskListPanel({ tasks, selectedDate }) {
         ) : (
           tasks.map((task, index) => (
             <div key={index} className="task-card">
-              <h4>{task.title}</h4>
-              <p>Type: {task.type}</p>
+              <h4>{task.name}</h4>
+              <p>Type: {task.taskType}</p>
               <p>Due: {task.dueDate}</p>
               <p>Time: {task.estimatedTime} hrs</p>
               <p>Weight: {task.gradeWeight}%</p>

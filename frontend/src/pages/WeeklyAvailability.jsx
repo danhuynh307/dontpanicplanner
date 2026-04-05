@@ -5,7 +5,7 @@ import {
   getAvailability,
   saveAvailability,
 } from "../services/availabilityService";
-
+// days of week
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const backendDayNames = [
   "SUNDAY",
@@ -16,24 +16,25 @@ const backendDayNames = [
   "FRIDAY",
   "SATURDAY",
 ];
-
+// availability window defaults
 const startHour = 6;
 const endHour = 24;
 const slotsPerHour = 4;
 const totalSlots = (endHour - startHour) * slotsPerHour;
 
+// creates empty grid
 function createInitialGrid() {
   return Array.from({ length: days.length }, () =>
     Array(totalSlots).fill(false)
   );
 }
-
+// 24h time to am + pm
 function formatHourLabel(hour) {
   const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
   return `${displayHour} ${suffix}`;
 }
-
+// computes the time for each block
 function slotToTime(slotIndex) {
   const totalMinutes = startHour * 60 + slotIndex * 15;
   const hour = Math.floor(totalMinutes / 60);
@@ -44,27 +45,24 @@ function slotToTime(slotIndex) {
     "0"
   )}`;
 }
-
+// time string to block
 function timeToSlot(timeString) {
   const [hour, minute] = timeString.split(":").map(Number);
   const totalMinutes = hour * 60 + minute;
   return (totalMinutes - startHour * 60) / 15;
 }
-
+// converts grid to back end blocks and merges consecutive slots
 function convertGridToBlocks(grid) {
   const blocks = [];
-
   for (let dayIndex = 0; dayIndex < grid.length; dayIndex++) {
     let startSlot = null;
 
     for (let slotIndex = 0; slotIndex <= grid[dayIndex].length; slotIndex++) {
-      const isSelected =
-        slotIndex < grid[dayIndex].length ? grid[dayIndex][slotIndex] : false;
+      const isSelected = slotIndex < grid[dayIndex].length ? grid[dayIndex][slotIndex] : false;
 
       if (isSelected && startSlot === null) {
         startSlot = slotIndex;
       }
-
       if (!isSelected && startSlot !== null) {
         blocks.push({
           dayOfWeek: backendDayNames[dayIndex],
@@ -79,7 +77,7 @@ function convertGridToBlocks(grid) {
 
   return blocks;
 }
-
+// backend blocks back to grid
 function convertBlocksToGrid(blocks) {
   const newGrid = createInitialGrid();
 
@@ -110,9 +108,9 @@ function convertBlocksToGrid(blocks) {
   return newGrid;
 }
 
+// all user actions (drag, click, save button)
 function WeeklyAvailability() {
   const navigate = useNavigate();
-
   const [grid, setGrid] = useState(createInitialGrid());
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState("add");
