@@ -76,7 +76,10 @@ function Dashboard() {
         />
 
         <div className="right-panel">
-          <CreateTaskPanel addTask={addTask} />
+          <CreateTaskPanel
+            addTask={addTask}
+            selectedDate={selectedDate}
+          />
           <TaskListPanel
             tasks={displayedTasks}
             selectedDate={selectedDate}
