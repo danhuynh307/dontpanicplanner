@@ -70,7 +70,7 @@ function CreateTaskPanel({ addTask }) {
         >
           <option>Assignment</option>
           <option>Study</option>
-          <option>Exam</option>
+          <option>Essay</option>
           <option>Project</option>
         </select>
 
