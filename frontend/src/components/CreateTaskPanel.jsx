@@ -9,6 +9,8 @@ function CreateTaskPanel({ addTask }) {
     gradeWeight: 10,
   });
 
+  const today = new Date().toISOString().split("T")[0];
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,6 +20,16 @@ function CreateTaskPanel({ addTask }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (Number(formData.estimatedTime) < 0) {
+      alert("Estimated time cannot be below 0.");
+      return;
+    }
+
+    if (formData.dueDate && formData.dueDate < today) {
+      alert("Due date cannot be in the past.");
+      return;
+    }
 
     const cleanedData = {
       ...formData,
@@ -68,6 +80,7 @@ function CreateTaskPanel({ addTask }) {
           name="estimatedTime"
           value={formData.estimatedTime}
           onChange={handleChange}
+          min="0"
         />
 
         <label>Due Date</label>
@@ -76,6 +89,7 @@ function CreateTaskPanel({ addTask }) {
           name="dueDate"
           value={formData.dueDate}
           onChange={handleChange}
+          min={today}
         />
 
         <label>Grade Weight (%)</label>

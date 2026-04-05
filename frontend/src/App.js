@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 //components
 import DashboardCards from "./components/DashboardCards";
@@ -12,15 +12,16 @@ import WeeklySchedule from "./pages/WeeklySchedule";
 import { getTasks, createTask } from "./services/taskService";
 
 import "./styles/app.css";
-// contains calendar and create task widget
+
 function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasks, setTasks] = useState([]);
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   useEffect(() => {
     loadTasks();
   }, []);
-    // load task from data structure
+
   const loadTasks = async () => {
     try {
       const data = await getTasks();
@@ -29,7 +30,7 @@ function Dashboard() {
       console.error("Failed to load tasks:", error);
     }
   };
-    // add task widget connecting
+
   const addTask = async (newTask) => {
     try {
       const savedTask = await createTask(newTask);
@@ -38,7 +39,32 @@ function Dashboard() {
       console.error("Failed to create task:", error);
     }
   };
-    //webpage layout
+
+  const formatDateToYYYYMMDD = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const displayedTasks = useMemo(() => {
+    if (showAllTasks) return tasks;
+    if (!selectedDate) return [];
+
+    const selectedDateString = formatDateToYYYYMMDD(selectedDate);
+    return tasks.filter((task) => task.dueDate === selectedDateString);
+  }, [tasks, selectedDate, showAllTasks]);
+
+  const handleSelectDate = (dateObj) => {
+    setSelectedDate(dateObj);
+    setShowAllTasks(false);
+  };
+
+  const deleteTask = (taskIndex) => {
+    setTasks((prevTasks) => prevTasks.filter((_, index) => index !== taskIndex));
+  };
+
   return (
     <div className="app-container">
       <DashboardCards />
@@ -46,18 +72,24 @@ function Dashboard() {
       <div className="main-content">
         <CalendarView
           selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
+          setSelectedDate={handleSelectDate}
         />
 
         <div className="right-panel">
           <CreateTaskPanel addTask={addTask} />
-          <TaskListPanel tasks={tasks} selectedDate={selectedDate} />
+          <TaskListPanel
+            tasks={displayedTasks}
+            selectedDate={selectedDate}
+            showAllTasks={showAllTasks}
+            onToggleShowAll={() => setShowAllTasks((prev) => !prev)}
+            onDeleteTask={deleteTask}
+          />
         </div>
       </div>
     </div>
   );
 }
-    // running the app and webpages
+
 function App() {
   return (
     <Routes>
