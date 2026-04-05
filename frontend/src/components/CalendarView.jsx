@@ -1,20 +1,26 @@
 import React, { useMemo, useState } from "react";
 
-function CalendarView({ selectedDate, setSelectedDate }) {
+function CalendarView({ selectedDate, setSelectedDate, tasks }) {
   const today = new Date();
 
-  // start from the Sunday of the current week
   const getStartOfWeek = (date) => {
     const d = new Date(date);
-    const day = d.getDay(); // sunday default
-    d.setDate(d.getDate() - day); // get current date
-    d.setHours(0, 0, 0, 0); // reset time
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
     return d;
   };
 
-  const [calendarStart, setCalendarStart] = useState(getStartOfWeek(today)); // starting day
+  const [calendarStart, setCalendarStart] = useState(getStartOfWeek(today));
 
-  // 4 week view (28 days)
+  const formatDateToYYYYMMDD = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const days = useMemo(() => {
     return Array.from({ length: 28 }, (_, index) => {
       const date = new Date(calendarStart);
@@ -23,13 +29,11 @@ function CalendarView({ selectedDate, setSelectedDate }) {
     });
   }, [calendarStart]);
 
-  // check two days are the same
   const sameDay = (d1, d2) =>
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  // check if day is in past to gray out
   const isPastDay = (date) => {
     const compare = new Date(date);
     compare.setHours(0, 0, 0, 0);
@@ -40,7 +44,6 @@ function CalendarView({ selectedDate, setSelectedDate }) {
     return compare < now;
   };
 
-  //format header for calendar
   const formatHeader = () => {
     const first = days[0];
     const last = days[27];
@@ -49,29 +52,24 @@ function CalendarView({ selectedDate, setSelectedDate }) {
     const lastMonth = last.toLocaleString("default", { month: "long" });
 
     if (first.getMonth() === last.getMonth()) {
-      // same month then display only that month
       return `${firstMonth} ${first.getDate()} - ${last.getDate()}, ${last.getFullYear()}`;
     }
 
-    // display both months if span multiple
     return `${firstMonth} ${first.getDate()} - ${lastMonth} ${last.getDate()}, ${last.getFullYear()}`;
   };
 
-  // logic for left arrow (going back 4 weeks)
   const handlePrev = () => {
     const newStart = new Date(calendarStart);
     newStart.setDate(calendarStart.getDate() - 28);
     setCalendarStart(newStart);
   };
 
-  // logic for right arrow (going forward 4 weeks)
   const handleNext = () => {
     const newStart = new Date(calendarStart);
     newStart.setDate(calendarStart.getDate() + 28);
     setCalendarStart(newStart);
   };
 
-  // calendar and buttons
   return (
     <div className="calendar-panel">
       <div className="calendar-header">
@@ -96,17 +94,25 @@ function CalendarView({ selectedDate, setSelectedDate }) {
           const isPast = isPastDay(dateObj);
           const isSelected = selectedDate && sameDay(dateObj, selectedDate);
 
+          const dateString = formatDateToYYYYMMDD(dateObj);
+          const taskCount = tasks.filter((task) => task.dueDate === dateString).length;
+
           return (
             <div
               key={index}
               className={`calendar-cell
                 ${isSelected ? "selected" : ""}
                 ${isToday ? "today" : ""}
-                ${isPast ? "past-day" : ""}`
-              }
+                ${isPast ? "past-day" : ""}`}
               onClick={() => setSelectedDate(dateObj)}
             >
               <span className="date-number">{dateObj.getDate()}</span>
+
+              {taskCount > 0 && (
+                <div className="task-count-badge">
+                  {taskCount}
+                </div>
+              )}
             </div>
           );
         })}

@@ -73,6 +73,7 @@ function Dashboard() {
         <CalendarView
           selectedDate={selectedDate}
           setSelectedDate={handleSelectDate}
+          tasks={tasks}
         />
 
         <div className="right-panel">

@@ -1,4 +1,5 @@
 import React from "react";
+import "../styles/app.css";
 
 function TaskListPanel({
   tasks,
@@ -28,15 +29,7 @@ function TaskListPanel({
 
               <button
                 onClick={() => onDeleteTask(i)}
-                style={{
-                  background: "#e74c3c",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "6px 10px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
+                className="delete-button"
               >
                 Delete
               </button>
