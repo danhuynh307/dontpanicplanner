@@ -1,8 +1,6 @@
 package com.example.dontpanicplanner;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalTime;
-import java.time.Duration;
 
 public class ScheduledTaskBlock{
     private List<AvailabilityBlock> availabilityBlocks;
@@ -21,58 +19,53 @@ public class ScheduledTaskBlock{
         return availabilityBlocks;
     }
 
-    public List<ScheduledTaskBlock> generateSchedule(TaskDataStructure<Task> tasks,
+    public List<ScheduledTaskBlock> generateSchedule(
+            TaskDataStructure<Task> tasks,
             List<AvailabilityBlock> availabilityBlocks)
     {
-        // Rank tasks based on priority
+
+        //Rank tasks based on priority
         TaskRankSystem.rankTasks(tasks);
-        List<ScheduledTaskBlock> result = new ArrayList<>();
-        int taskIndex = 0;
 
-        // Fill each availability block if available
-        for(AvailabilityBlock block : availabilityBlocks)
+        //Split the tasks into 30 minutes (default)
+        List<Task> sessionTasks = new ArrayList<>();
+
+        for(int i = 0; i < tasks.size(); i++)
         {
-            LocalTime start = LocalTime.parse(block.getStartTime());
-            LocalTime end = LocalTime.parse(block.getEndTime());
+            Task t = tasks.get(i);
+            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, new PriorityScoreService());
+            sessionTasks.addAll(splitSessions);
+        }
+
+        //Schedule sessions into blocks by availability
+        List<ScheduledTaskBlock> result = new ArrayList<>();
+        int sessionIndex = 0;
+        for (AvailabilityBlock block : availabilityBlocks)
+        {
             double remainingTime =
-                    Duration.between(start, end).toMinutes() / 60.0;
+                    java.time.Duration.between(
+                            java.time.LocalTime.parse(block.getStartTime()),
+                            java.time.LocalTime.parse(block.getEndTime())
+                    ).toMinutes() / 60.0;
 
-            List<Task> scheduledTasks = new ArrayList<>();
-            while (remainingTime > 0 && taskIndex < tasks.size())
+            List<Task> scheduled = new ArrayList<>();
+            while(remainingTime > 0 && sessionIndex < sessionTasks.size())
             {
-                Task current = tasks.get(taskIndex);
-                double taskTime = current.getEstimatedTime();
 
-                //if the task fits in fully
-                if (taskTime <= remainingTime) {
-                    scheduledTasks.add(current);
-                    remainingTime -= taskTime;
-                    taskIndex++;
-                }
-                else //if the task is too big then split
-                {
-                    Task splitTask = new Task(
-                            current.getName(),
-                            current.getTaskType(),
-                            remainingTime,
-                            current.getDueDate(),
-                            current.getGradeWeight(),
-                            current.getCurrentGrade()
-                    );
+                Task current = sessionTasks.get(sessionIndex);
+                double sessionTime = current.getEstimatedTime();
 
-                    scheduledTasks.add(splitTask);
-                    current.setEstimatedTime(taskTime - remainingTime);
-                    remainingTime = 0;
+                if (sessionTime <= remainingTime) {
+                    scheduled.add(current);
+                    remainingTime -= sessionTime;
+                    sessionIndex++;
+                } else {
+                    break; // if the task can't fit in the session, move to the next block
                 }
             }
-
-            result.add(new ScheduledTaskBlock(
-                    List.of(block),
-                    scheduledTasks
-            ));
+            result.add(new ScheduledTaskBlock(List.of(block), scheduled));
         }
         return result;
     }
-
 
 }
