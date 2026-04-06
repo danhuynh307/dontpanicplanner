@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskRankSystem {
 
-    private final PriorityScoreService scoreService;
+    private static PriorityScoreService scoreService = new PriorityScoreService();
 
     // Constructor injection (instead of new)
     public TaskRankSystem(PriorityScoreService scoreService) {
@@ -17,7 +17,7 @@ public class TaskRankSystem {
      * Compute priority scores
      * Sort tasks in descending order
      */
-    public void rankTasks(TaskDataStructure<Task> tasks) {
+    public static void rankTasks(TaskDataStructure<Task> tasks) {
         applyScores(tasks);
         sortByPriority(tasks);
     }
@@ -25,7 +25,7 @@ public class TaskRankSystem {
     /**
     * Compute scores for all tasks
      */
-    private void applyScores(TaskDataStructure<Task> tasks) {
+    private static void applyScores(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
             scoreService.applyPriorityScore(t);
@@ -35,7 +35,7 @@ public class TaskRankSystem {
     /**
      * Sort tasks
      */
-    private void sortByPriority(TaskDataStructure<Task> tasks) {
+    private static void sortByPriority(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             for (int j = 0; j < tasks.size() - 1; j++) {
 
