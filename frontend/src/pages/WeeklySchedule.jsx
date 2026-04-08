@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import WeeklyTaskList from "../components/WeeklyTaskList";
 import WeeklyCalendarView from "../components/WeeklyCalendarView";
 import { fetchWeeklySchedule } from "../services/scheduleService";
@@ -6,6 +7,8 @@ import { getTasks } from "../services/taskService";
 import "../styles/WeeklySchedule.css";
 
 function WeeklySchedule() {
+  const navigate = useNavigate();
+
   const getStartOfWeek = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -60,21 +63,55 @@ function WeeklySchedule() {
     setWeekStartDate(newDate);
   };
 
+  // Stubs — wire up to real handlers later
+  const handleRemoveTask = (taskIndex) => {
+    console.log("Remove task at index:", taskIndex);
+  };
+
+  const handleUpdateTask = (taskIndex) => {
+    console.log("Update task at index:", taskIndex);
+  };
+
+  const handleUpdateSchedule = () => {
+    console.log("Update schedule clicked");
+  };
+
   return (
-    <div className="weekly-schedule-page">
-      {loading ? (
-        <div className="weekly-loading">Loading weekly schedule...</div>
-      ) : (
-        <>
-          <WeeklyTaskList tasks={tasks} />
-          <WeeklyCalendarView
-            weekStartDate={weekStartDate}
-            blocks={scheduleBlocks}
-            onPrevWeek={handlePrevWeek}
-            onNextWeek={handleNextWeek}
-          />
-        </>
-      )}
+    <div className="weekly-schedule-wrapper">
+      {/* GMU-style top bar */}
+      <div className="schedule-top-bar">
+        <button className="schedule-back-btn" onClick={() => navigate("/")}>
+          &#8592; Back
+        </button>
+        <div className="schedule-top-bar-title">
+          <span className="schedule-top-bar-label">Don't Panic Planner</span>
+          <span className="schedule-top-bar-sep">|</span>
+          <span>Weekly Schedule</span>
+        </div>
+        <button className="schedule-update-btn" onClick={handleUpdateSchedule}>
+          Update Schedule
+        </button>
+      </div>
+
+      <div className="weekly-schedule-page">
+        {loading ? (
+          <div className="weekly-loading">Loading weekly schedule...</div>
+        ) : (
+          <>
+            <WeeklyTaskList
+              tasks={tasks}
+              onRemoveTask={handleRemoveTask}
+              onUpdateTask={handleUpdateTask}
+            />
+            <WeeklyCalendarView
+              weekStartDate={weekStartDate}
+              blocks={scheduleBlocks}
+              onPrevWeek={handlePrevWeek}
+              onNextWeek={handleNextWeek}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }

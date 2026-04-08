@@ -6,20 +6,14 @@ public class TaskDataStructure<T>  {
     private T[] tasks;
     private int size;
 
-    /**
-     * Constructs an empty DynamicArray with initial capacity.
-     */
+    // creates an empty array with default capacity
     @SuppressWarnings("unchecked")
     public TaskDataStructure(){
         tasks = (T[]) new Object[INITCAP];
         size = 0;
     }
 
-    /**
-     * Constructs an empty DynamicArray with a given initial capacity.
-     * @param initCapacity the initial capacity
-     * @throws IllegalArgumentException if initCapacity < 1
-     */
+    // creates an empty array with a custom starting capacity
     @SuppressWarnings("unchecked")
     public TaskDataStructure(int initCapacity){
         if(initCapacity < 1)
@@ -30,29 +24,17 @@ public class TaskDataStructure<T>  {
         size = 0;
     }
 
-    /**
-     * Returns the number of elements stored.
-     * @return current number of elements
-     */
+    // returns how many elements are in the structure
     public int size() {
         return size;
     }
 
-    /**
-     * Returns the current capacity.
-     * @return capacity of storage
-     */
+    // returns current array capacity
     public int capacity() {
         return tasks.length;
     }
 
-    /**
-     * Replaces the element at index with a value.
-     * @param index index of element to replace
-     * @param value new value to set
-     * @return the old value at index
-     * @throws IndexOutOfBoundsException if index is invalid
-     */
+    // replaces value at index and returns old value
     public T set(int index, T value){
         validIndex(index);
         T old = tasks[index];
@@ -60,22 +42,13 @@ public class TaskDataStructure<T>  {
         return old;
     }
 
-    /**
-     * Get the element at index.
-     * @param index index to get
-     * @return the element at index
-     * @throws IndexOutOfBoundsException if index is invalid
-     */
+    // gets the value at a specific index
     public T get(int index){
         validIndex(index);
         return tasks[index];
     }
 
-    /**
-     * Add value to the end of the array.
-     * @param value element to add
-     * @return always true
-     */
+    // adds value to the end of the array
     @SuppressWarnings("unchecked")
     public boolean add(T value){
         expandArray(size + 1);
@@ -83,12 +56,7 @@ public class TaskDataStructure<T>  {
         return true;
     }
 
-    /**
-     * Add value at index, shifting later elements right.
-     * @param index index to insert at
-     * @param value element to insert
-     * @throws IndexOutOfBoundsException if index is invalid
-     */
+    // inserts value at index and shifts elements right
     @SuppressWarnings("unchecked")
     public void add(int index, T value){
         if(index < 0 || index > size)
@@ -104,12 +72,7 @@ public class TaskDataStructure<T>  {
         size++;
     }
 
-    /**
-     * Removes and returns the element at index, shifting later elements left.
-     * @param index index of element to remove
-     * @return removed element
-     * @throws IndexOutOfBoundsException if index is invalid
-     */
+    // removes element at index and shifts elements left
     @SuppressWarnings("unchecked")
     public T remove(int index){
         // remove and return element at position index
@@ -132,11 +95,7 @@ public class TaskDataStructure<T>  {
         return removed;
     }
 
-    /**
-     * Removes and returns the last element.
-     * @return removed element
-     * @throws IndexOutOfBoundsException if array is empty
-     */
+    // removes the last element in the array
     public T removeEnd() {
         if (size == 0) {
             throw new IndexOutOfBoundsException("Array is empty");
@@ -150,15 +109,12 @@ public class TaskDataStructure<T>  {
         return removed;
     }
 
+    // checks if the structure is empty
     public boolean isEmpty() {
         return size == 0;
     }
 
     //Private helpers
-    /**
-     * Doubles the array capacity if required for minCapacity}.
-     * @param minCapacity required capacity
-     */
     @SuppressWarnings("unchecked")
     private void expandArray(int minCapacity)
     {
@@ -174,10 +130,7 @@ public class TaskDataStructure<T>  {
         }
     }
 
-    /**
-     * Halves the array capacity if size < capacity/3.
-     * Capacity will not drop below INITCAP}.
-     */
+    // shrinks array if too much unused space
     @SuppressWarnings("unchecked")
     private void shrinkArray()
     {
@@ -195,11 +148,7 @@ public class TaskDataStructure<T>  {
         }
     }
 
-    /**
-     * Validates an index is within bound.
-     * @param index index to check
-     * @throws IndexOutOfBoundsException if invalid
-     */
+    // checks if index is valid
     private void validIndex(int index)
     {
         if(index < 0 || index >= size)

@@ -29,8 +29,6 @@ public class Task {
     Integer  priorityScore;   // null until the priority algorithm runs
 
 
-    // ── Constructors ──────────────────────────────────────────
-
     // Required by JPA
     public Task() {}
 
@@ -60,12 +58,7 @@ public class Task {
     }
 
 
-    // ── CSV export ────────────────────────────────────────────
-
-    /**
-     * Converts this task to a single CSV row.
-     * Values containing commas or quotes are wrapped in double-quotes.
-     */
+    // converts task into a CSV row
     public String toCSV() {
         return String.join(",",
                 csvEscape(name),
@@ -79,12 +72,7 @@ public class Task {
     }
 
 
-    // ── CSV import ────────────────────────────────────────────
-
-    /**
-     * Parses a single CSV row (no header) and returns a Task.
-     * Expects 7 columns in the same order as CSV_HEADER.
-     */
+    // creates a Task from a CSV row
     public static Task fromCSV(String csvLine) {
         String[] p = splitCSVLine(csvLine);
 
@@ -104,8 +92,6 @@ public class Task {
         return t;
     }
 
-
-    // ── Private CSV helpers ───────────────────────────────────
 
     // Wraps value in double-quotes if it contains a comma or quote
     private static String csvEscape(String value) {
@@ -147,7 +133,7 @@ public class Task {
         return s == null || s.isBlank();
     }
 
-    // ── Getters ───────────────────────────────────────────────
+    // Getters
 
     public Long getId()              { return id; }
     public String getName()          { return name; }
@@ -158,7 +144,7 @@ public class Task {
     public Double getCurrentGrade()  { return currentGrade; }
     public Integer getPriorityScore(){ return priorityScore; }
 
-    // ── Setters ───────────────────────────────────────────────
+    // Setters
 
     public void setId(Long id)                      { this.id = id; }
     public void setName(String name)                { this.name = name; }

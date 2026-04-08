@@ -1,239 +1,412 @@
+/*Colors*/
+:root {
+  --gmu-green:      #006633;
+  --gmu-green-dark: #004d26;
+  --gmu-green-light:#e8f5ee;
+  --gmu-gold:       #FFCC00;
+  --gmu-gold-dark:  #d4a900;
+  --text-dark:      #1a1a1a;
+  --text-mid:       #4b5563;
+  --text-light:     #6b7280;
+  --border:         #e5e7eb;
+  --bg-page:        #f5f7f5;
+  --bg-panel:       #ffffff;
+  --bg-header:      #fafafa;
+}
+
+/* Outer wrapper (includes top bar + two-panel layout)*/
+.weekly-schedule-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-page);
+}
+
+/* top navigation bar */
+.schedule-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 54px;
+  background: var(--gmu-green);
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.schedule-back-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.schedule-back-btn:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+.schedule-top-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.schedule-top-bar-label {
+  color: var(--gmu-gold);
+  font-weight: 700;
+}
+.schedule-top-bar-sep {
+  opacity: 0.45;
+}
+
+.schedule-update-btn {
+  background: var(--gmu-gold);
+  color: var(--gmu-green-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.schedule-update-btn:hover {
+  background: var(--gmu-gold-dark);
+}
+
+/* Two-panel grid */
 .weekly-schedule-page {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
-  padding: 20px;
-  height: calc(100vh - 80px);
-  background: #f7f8fb;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  padding: 16px;
+  flex: 1;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
+/* Shared panel shell */
 .weekly-task-list-panel,
 .weekly-calendar-panel {
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  background: var(--bg-panel);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* GMU schedule title bar (inside calendar panel) */
+.schedule-title-bar {
+  background: var(--gmu-green);
+  padding: 10px 18px;
+}
+.schedule-title-text {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Panel header (week range + nav arrows) */
 .weekly-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--gmu-green);
+  background: var(--bg-header);
 }
 
 .weekly-panel-header h2 {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   margin: 0;
-  color: #1f2937;
+  color: var(--gmu-green-dark);
+  font-weight: 700;
 }
 
+/* Week nav arrows */
+.calendar-nav {
+  display: flex;
+  gap: 6px;
+}
+.calendar-nav button {
+  border: 1px solid var(--gmu-green);
+  background: white;
+  color: var(--gmu-green);
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: background 0.13s, color 0.13s;
+}
+.calendar-nav button:hover {
+  background: var(--gmu-green);
+  color: white;
+}
+
+/* Task list scroll area */
 .weekly-task-list-scroll {
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex: 1;
 }
 
+/* Task card */
 .weekly-task-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--gmu-green);
   border-radius: 10px;
-  padding: 14px;
-  background: #fafafa;
+  padding: 12px 14px 10px;
+  background: #fafcfa;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.weekly-task-card h3 {
-  margin: 0 0 8px 0;
-  font-size: 1rem;
-  color: #111827;
+/* Header row: task name + priority badge */
+.weekly-task-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.weekly-task-card p {
-  margin: 0 0 10px 0;
-  color: #4b5563;
-  font-size: 0.92rem;
+.weekly-task-card-header h3 {
+  margin: 0;
+  font-size: 0.97rem;
+  color: var(--text-dark);
+  line-height: 1.3;
+  flex: 1;
 }
 
+/* Priority score badge */
+.priority-badge {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+/* High priority (75–100): red */
+.priority-high {
+  background: #dc2626;
+  color: white;
+}
+/* Medium priority (50–74): amber */
+.priority-med {
+  background: #f59e0b;
+  color: white;
+}
+/* Low priority (0–49): green */
+.priority-low {
+  background: var(--gmu-green);
+  color: white;
+}
+/* No score */
+.priority-na {
+  background: #e5e7eb;
+  color: var(--text-light);
+}
+
+/* Task meta info */
 .weekly-task-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--text-mid);
+}
+.weekly-task-meta span strong {
+  color: var(--text-dark);
 }
 
+/* Per-task action buttons */
+.weekly-task-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.task-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.13s;
+}
+.task-btn:hover {
+  opacity: 0.85;
+}
+.task-btn-update {
+  background: var(--gmu-green);
+  color: white;
+}
+.task-btn-remove {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+/* Calendar wrapper (scrollable body) */
 .weekly-calendar-wrapper {
   display: flex;
   flex: 1;
   overflow: auto;
 }
 
+/* Time column */
 .weekly-time-column {
-  width: 72px;
-  border-right: 1px solid #e5e7eb;
-  background: #fafafa;
+  width: 68px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-header);
   flex-shrink: 0;
 }
-
 .weekly-time-header-spacer {
   height: 60px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
 }
-
 .weekly-time-slot {
   height: 64px;
   padding-top: 2px;
   text-align: center;
-  font-size: 0.82rem;
-  color: #6b7280;
+  font-size: 0.78rem;
+  color: var(--text-light);
   border-bottom: 1px solid #f0f0f0;
   box-sizing: border-box;
 }
 
+/* Day header row */
 .weekly-calendar-grid-area {
   flex: 1;
-  min-width: 700px;
+  min-width: 600px;
 }
-
 .weekly-day-header-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   height: 60px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fafafa;
+  border-bottom: 2px solid var(--gmu-green);
+  background: var(--gmu-green-light);
 }
-
 .weekly-day-header {
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 2px;
 }
-
 .weekly-day-name {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.weekly-day-date {
   font-size: 0.85rem;
-  color: #6b7280;
+  font-weight: 700;
+  color: var(--gmu-green-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.weekly-day-date {
+  font-size: 0.82rem;
+  color: var(--text-light);
 }
 
+/* Grid body */
 .weekly-grid-body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   position: relative;
   min-height: 960px;
 }
-
 .weekly-day-column {
   position: relative;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--border);
 }
-
 .weekly-hour-cell {
   height: 64px;
   border-bottom: 1px solid #f0f0f0;
   box-sizing: border-box;
 }
 
+/* Task block on calendar */
 .weekly-task-block {
   position: absolute;
-  left: 6px;
-  right: 6px;
-  border-radius: 8px;
-  padding: 6px 8px;
+  left: 4px;
+  right: 4px;
+  border-radius: 6px;
+  padding: 5px 7px 4px;
   color: #111827;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0,0,0,0.1);
   box-sizing: border-box;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-.weekly-task-block span {
-  display: block;
-  line-height: 1.2;
-}
-
-.calendar-nav {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
+}
+.weekly-task-block-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+.weekly-task-block-title {
+  display: block;
+  line-height: 1.25;
+  flex: 1;
+  font-weight: 600;
+}
+/* Priority score badge on the calendar block */
+.weekly-task-block-score {
+  background: rgba(0,0,0,0.18);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.weekly-task-block-time {
+  font-size: 0.68rem;
+  opacity: 0.75;
 }
 
-.calendar-nav button {
-  border: none;
-  background: #e5e7eb;
-  color: #111827;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.calendar-nav button:hover {
-  background: #d1d5db;
-}
-
+/* Misc */
 .weekly-loading,
 .empty-message {
-  color: #6b7280;
+  color: var(--text-light);
   padding: 20px;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 1000px) {
   .weekly-schedule-page {
     grid-template-columns: 1fr;
     height: auto;
+    overflow: visible;
   }
-
   .weekly-task-list-panel {
-    max-height: 300px;
+    max-height: 320px;
   }
-}
-
-.weekly-task-card {
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 14px;
-  background: #fafafa;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.weekly-task-card h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #111827;
-}
-
-.weekly-task-card p {
-  margin: 0;
-  color: #4b5563;
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.weekly-task-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.88rem;
-  color: #374151;
-}
-
-.weekly-task-meta span strong {
-  color: #111827;
+  .weekly-schedule-wrapper {
+    height: auto;
+  }
 }

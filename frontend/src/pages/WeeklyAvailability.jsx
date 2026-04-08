@@ -173,16 +173,25 @@ function WeeklyAvailability() {
 
   return (
     <div
-      className="availability-page"
+      className="availability-wrapper"
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* top bar */}
+      <div className="avail-top-bar">
+        <button className="avail-back-btn" onClick={() => navigate("/")}>
+          &#8592; Back
+        </button>
+        <span className="avail-top-bar-title">
+          <span className="avail-top-bar-brand">Don't Panic Planner</span>
+          <span className="avail-top-bar-sep">|</span>
+          Weekly Availability
+        </span>
+        <div style={{ width: 80 }} />
+      </div>
+
       <div className="availability-card">
         <div className="availability-header">
-          <button className="back-button" onClick={() => navigate("/")}>
-            ←
-          </button>
-
           <div>
             <h1>Weekly Availability</h1>
             <p>Set your general weekly schedule by clicking and dragging</p>

@@ -12,19 +12,13 @@ public class TaskRankSystem {
         this.scoreService = scoreService;
     }
 
-    /**
-     * Public method to rank tasks:
-     * Compute priority scores
-     * Sort tasks in descending order
-     */
+    // calculates scores and sorts tasks by priority
     public static void rankTasks(TaskDataStructure<Task> tasks) {
         applyScores(tasks);
         sortByPriority(tasks);
     }
 
-    /**
-    * Compute scores for all tasks
-     */
+    // Compute scores for all tasks
     private static void applyScores(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
@@ -32,9 +26,7 @@ public class TaskRankSystem {
         }
     }
 
-    /**
-     * Sort tasks
-     */
+    // Sorts tasks
     private static void sortByPriority(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             for (int j = 0; j < tasks.size() - 1; j++) {

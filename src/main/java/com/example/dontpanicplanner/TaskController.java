@@ -19,8 +19,6 @@ public class TaskController {
         this.priorityScoreService = priorityScoreService;
     }
 
-    // ── CREATE ────────────────────────────────────────────────
-    // POST /api/tasks
     // Accepts a Task object in the request body, calculates priority, and adds it.
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
@@ -29,8 +27,6 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    // ── READ (all) ────────────────────────────────────────────
-    // GET /api/tasks
     // Returns all tasks currently in the store, with fresh priority scores.
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
@@ -45,8 +41,6 @@ public class TaskController {
         return ResponseEntity.ok(result);
     }
 
-    // ── READ (single) ─────────────────────────────────────────
-    // GET /api/tasks/{index}
     // Returns a single task by its position index in the store.
     @GetMapping("/{index}")
     public ResponseEntity<Task> getTask(@PathVariable int index) {
@@ -59,8 +53,6 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    // ── UPDATE ────────────────────────────────────────────────
-    // PUT /api/tasks/{index}
     // Replaces the task at the given index with the new task from the request body.
     @PutMapping("/{index}")
     public ResponseEntity<Task> updateTask(@PathVariable int index, @RequestBody Task updatedTask) {
@@ -73,8 +65,6 @@ public class TaskController {
         return ResponseEntity.ok(updatedTask);
     }
 
-    // ── DELETE ────────────────────────────────────────────────
-    // DELETE /api/tasks/{index}
     // Removes the task at the given index from the store.
     @DeleteMapping("/{index}")
     public ResponseEntity<Void> deleteTask(@PathVariable int index) {

@@ -66,7 +66,15 @@ function Dashboard() {
   };
 
   return (
-    <div className="app-container">
+    <div className="dashboard-wrapper">
+      {/* GMU top bar */}
+      <div className="dashboard-top-bar">
+        <span className="dashboard-top-bar-brand">Don't Panic Planner</span>
+        <span className="dashboard-top-bar-sep">|</span>
+        <span className="dashboard-top-bar-page">Dashboard</span>
+      </div>
+
+      <div className="app-container">
       <DashboardCards />
 
       <div className="main-content">
@@ -89,6 +97,7 @@ function Dashboard() {
             onDeleteTask={deleteTask}
           />
         </div>
+      </div>
       </div>
     </div>
   );

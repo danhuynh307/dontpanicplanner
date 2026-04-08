@@ -19,29 +19,39 @@ function TaskListPanel({
       {tasks.length === 0 ? (
         <p>No tasks yet</p>
       ) : (
-        tasks.map((task, i) => (
-          <div key={i} className="task-card">
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>
-                <h4>{task.name}</h4>
-                <p>{task.taskType}</p>
+        tasks.map((task, i) => {
+          const score = task.priorityScore;
+          const badgeClass =
+            score == null ? "priority-badge priority-na"
+            : score >= 75  ? "priority-badge priority-high"
+            : score >= 50  ? "priority-badge priority-med"
+            :                "priority-badge priority-low";
+
+          return (
+            <div key={i} className="task-card">
+              <div className="task-card-header">
+                <div>
+                  <h4>{task.name}</h4>
+                  <p className="task-card-type">{task.taskType}</p>
+                </div>
+                <div className="task-card-right">
+                  <span className={badgeClass}>
+                    {score != null ? Math.round(score) : "—"}
+                  </span>
+                  <button onClick={() => onDeleteTask(i)} className="delete-button">
+                    Delete
+                  </button>
+                </div>
               </div>
 
-              <button
-                onClick={() => onDeleteTask(i)}
-                className="delete-button"
-              >
-                Delete
-              </button>
+              <div className="task-card-meta">
+                <span>Due: {task.dueDate || "No due date"}</span>
+                <span>{task.estimatedTime} hrs</span>
+                <span>{task.gradeWeight}% weight</span>
+              </div>
             </div>
-
-            <div style={{ marginTop: "8px" }}>
-              <p>Due: {task.dueDate || "No due date"}</p>
-              <p>{task.estimatedTime} hrs</p>
-              <p>{task.gradeWeight}%</p>
-            </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );

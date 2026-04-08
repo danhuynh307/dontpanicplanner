@@ -58,13 +58,29 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
     timeLabels.push(`${hour12}${suffix}`);
   }
 
+  // Semester label (approximate based on current month)
+  const getSemesterLabel = () => {
+    const month = weekStartDate.getMonth() + 1;
+    const year = weekStartDate.getFullYear();
+    if (month >= 8 && month <= 12) return `Fall ${year}`;
+    if (month >= 1 && month <= 5) return `Spring ${year}`;
+    return `Summer ${year}`;
+  };
+
   return (
     <div className="weekly-calendar-panel">
+      {/* schedule title bar */}
+      <div className="schedule-title-bar">
+        <span className="schedule-title-text">
+          Class Schedule for {getSemesterLabel()}
+        </span>
+      </div>
+
       <div className="weekly-panel-header">
         <h2>{formatWeekHeader()}</h2>
         <div className="calendar-nav">
-          <button onClick={onPrevWeek}>{"<"}</button>
-          <button onClick={onNextWeek}>{">"}</button>
+          <button onClick={onPrevWeek}>&#8249;</button>
+          <button onClick={onNextWeek}>&#8250;</button>
         </div>
       </div>
 
@@ -104,7 +120,17 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
                       style={getBlockStyle(block)}
                       title={`${block.taskTitle} (${block.startTime} - ${block.endTime})`}
                     >
-                      <span>{block.taskTitle}</span>
+                      <div className="weekly-task-block-inner">
+                        <span className="weekly-task-block-title">{block.taskTitle}</span>
+                        {block.priorityScore != null && (
+                          <span className="weekly-task-block-score">
+                            {Math.round(block.priorityScore)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="weekly-task-block-time">
+                        {block.startTime} – {block.endTime}
+                      </span>
                     </div>
                   ))}
               </div>

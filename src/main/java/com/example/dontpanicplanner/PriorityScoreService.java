@@ -14,11 +14,7 @@ public class PriorityScoreService {
     private static final double GRADE_WEIGHT_WEIGHT = 0.20;
     private static final double CURRENT_GRADE_WEIGHT = 0.25;
 
-    /**
-     * Calculates and returns an integer priority score from 0 to 100.
-     * Also leaves scheduling/splitting/ranking concerns alone since those belong
-     * to the other team tasks.
-     */
+    // calculates a priority score from 0–100 based on task properties
     public int calculatePriorityScore(Task task) {
         if (task == null) {
             return 0;
@@ -38,9 +34,7 @@ public class PriorityScoreService {
         return (int) Math.round(weightedScore * 100.0);
     }
 
-    /**
-     * Recomputes the priority score and stores it directly on the task.
-     */
+    // calculates the score and stores it back into the task
     public Task applyPriorityScore(Task task) {
         if (task == null) {
             return null;
@@ -50,15 +44,7 @@ public class PriorityScoreService {
         return task;
     }
 
-    /**
-     * Estimated Time formula draft:
-     * (5 - t) / 4.5
-     *
-     * Intended behavior:
-     * - 0.5 hours or less => max priority contribution
-     * - 5 hours or more => min priority contribution
-     * - shorter tasks score higher
-     */
+    // shorter tasks get higher priority, longer tasks get lower
     private double calculateEstimatedTimeScore(Double estimatedTimeHours) {
         if (estimatedTimeHours == null) {
             // Neutral-to-high default if missing
@@ -77,15 +63,7 @@ public class PriorityScoreService {
         return clamp((5.0 - t) / 4.5);
     }
 
-    /**
-     * Due Date formula draft:
-     * (10 - d) / 9
-     *
-     * Intended behavior:
-     * - due in 1 day or less => max priority contribution
-     * - due in 10 days or more => min priority contribution
-     * - overdue tasks are treated as max urgency
-     */
+    // tasks due sooner get higher priority, far deadlines get lower
     private double calculateDueDateScore(LocalDate dueDate) {
         if (dueDate == null) {
             return 0.0;
@@ -103,14 +81,7 @@ public class PriorityScoreService {
         return clamp((10.0 - daysUntilDue) / 9.0);
     }
 
-    /**
-     * Grade Weight formula draft:
-     * (w - 1) / 19
-     *
-     * Intended behavior:
-     * - 1% or less => minimum contribution
-     * - 20% or more => maximum contribution
-     */
+    // higher grade weight means higher priority
     private double calculateGradeWeightScore(Integer gradeWeightPercent) {
         if (gradeWeightPercent == null) {
             return 0.0;
@@ -128,17 +99,7 @@ public class PriorityScoreService {
         return clamp((w - 1.0) / 19.0);
     }
 
-    /**
-     * Current Grade formula draft:
-     * (90 - g) / 20
-     *
-     * Intended behavior:
-     * - below 70 => maximum contribution
-     * - 90 or above => minimum contribution
-     *
-     * Team note says this may not be implemented in the MVP and should default to max.
-     * So if currentGrade is null, we use 1.0.
-     */
+    // lower current grade = higher priority, high grade = lower priority
     private double calculateCurrentGradeScore(Double currentGradePercent) {
         if (currentGradePercent == null) {
             return 1.0;

@@ -6,18 +6,10 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Handles reading and writing lists of Tasks to/from CSV files.
- *
- * Export: TaskCSVHandler.exportToFile(tasks, "tasks.csv")
- * Import: List<Task> tasks = TaskCSVHandler.importFromFile("tasks.csv")
- */
+// handles reading and writing Task objects to CSV files
 public class TaskCSVHandler {
 
-    /**
-     * Writes tasks to a CSV file on disk.
-     * Creates the file if it doesn't exist; overwrites if it does.
-     */
+    // writes a list of tasks to a CSV file (overwrites if file exists)
     public static void exportToFile(List<Task> tasks, String filePath) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(
                 Paths.get(filePath), StandardCharsets.UTF_8)) {
@@ -32,10 +24,7 @@ public class TaskCSVHandler {
         }
     }
 
-    /**
-     * Reads tasks from a CSV file on disk.
-     * Skips the header row and any blank lines.
-     */
+    // reads tasks from a CSV file and skips header/empty lines
     public static List<Task> importFromFile(String filePath) throws IOException {
         List<Task> tasks = new ArrayList<>();
         List<String> lines = Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
@@ -49,17 +38,7 @@ public class TaskCSVHandler {
         return tasks;
     }
 
-    /**
-     * Returns the CSV content as a byte array.
-     * Use this for HTTP download responses (no temp file needed).
-     *
-     * Example in a REST controller:
-     *   byte[] csv = TaskCSVHandler.exportToBytes(tasks);
-     *   return ResponseEntity.ok()
-     *       .header("Content-Disposition", "attachment; filename=tasks.csv")
-     *       .contentType(MediaType.parseMediaType("text/csv"))
-     *       .body(csv);
-     */
+    // converts tasks into CSV format as a byte array (useful for downloads)
     public static byte[] exportToBytes(List<Task> tasks) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (BufferedWriter writer = new BufferedWriter(
@@ -76,10 +55,7 @@ public class TaskCSVHandler {
         return out.toByteArray();
     }
 
-    /**
-     * Parses CSV content from a byte array (e.g. from a multipart file upload).
-     * Use this for HTTP upload endpoints.
-     */
+    // reads tasks from CSV byte data (useful for uploads)
     public static List<Task> importFromBytes(byte[] csvBytes) throws IOException {
         List<Task> tasks = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(
