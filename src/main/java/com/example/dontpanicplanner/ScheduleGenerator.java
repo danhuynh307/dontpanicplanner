@@ -1,54 +1,50 @@
 package com.example.dontpanicplanner;
 
-import java.time.Duration;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ScheduleGenerator {
 
-    public List<ScheduledTaskBlock> generateSchedule(
+    public List<ScheduledTaskGroup> generateSchedule(
             TaskDataStructure<Task> tasks,
-            List<AvailabilityBlock> availabilityBlocks) {
-
+            List<AvailabilityBlock> availabilityBlocks)
+    {
         TaskRankSystem.rankTasks(tasks);
 
         List<Task> sessionTasks = new ArrayList<>();
+
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
             List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, new PriorityScoreService());
             sessionTasks.addAll(splitSessions);
         }
 
-        List<ScheduledTaskBlock> result = new ArrayList<>();
+        List<ScheduledTaskGroup> result = new ArrayList<>();
         int sessionIndex = 0;
 
         for (AvailabilityBlock block : availabilityBlocks) {
-            LocalTime currentStart = LocalTime.parse(block.getStartTime());
-            LocalTime blockEnd = LocalTime.parse(block.getEndTime());
+            double remainingTime =
+                    java.time.Duration.between(
+                            java.time.LocalTime.parse(block.getStartTime()),
+                            java.time.LocalTime.parse(block.getEndTime())
+                    ).toMinutes() / 60.0;
 
-            while (sessionIndex < sessionTasks.size() && currentStart.isBefore(blockEnd)) {
-                Task currentTask = sessionTasks.get(sessionIndex);
+            List<Task> scheduled = new ArrayList<>();
 
-                long sessionMinutes = (long) (currentTask.getEstimatedTime() * 60);
-                LocalTime sessionEnd = currentStart.plusMinutes(sessionMinutes);
+            while (remainingTime > 0 && sessionIndex < sessionTasks.size()) {
+                Task current = sessionTasks.get(sessionIndex);
+                double sessionTime = current.getEstimatedTime();
 
-                if (sessionEnd.isAfter(blockEnd)) {
+                if (sessionTime <= remainingTime) {
+                    scheduled.add(current);
+                    remainingTime -= sessionTime;
+                    sessionIndex++;
+                } else {
                     break;
                 }
-
-                result.add(new ScheduledTaskBlock(
-                        currentTask.getId(),
-                        currentTask.getTitle(),
-                        block.getDayOfWeek(),
-                        currentStart.toString(),
-                        sessionEnd.toString(),
-                        currentTask.getColor()
-                ));
-
-                currentStart = sessionEnd;
-                sessionIndex++;
             }
+
+            result.add(new ScheduledTaskGroup(List.of(block), scheduled));
         }
 
         return result;
