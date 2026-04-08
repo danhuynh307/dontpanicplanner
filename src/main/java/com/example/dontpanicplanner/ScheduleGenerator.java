@@ -3,12 +3,11 @@ package com.example.dontpanicplanner;
 import java.util.ArrayList;
 import java.util.List;
 
+
+// computes scheduling logic, places tasks inside availability blocks based on priority score
 public class ScheduleGenerator {
 
-    public List<ScheduledTaskGroup> generateSchedule(
-            TaskDataStructure<Task> tasks,
-            List<AvailabilityBlock> availabilityBlocks)
-    {
+    public List<ScheduledTaskGroup> generateSchedule(TaskDataStructure<Task> tasks, List<AvailabilityBlock> availabilityBlocks) {
         TaskRankSystem.rankTasks(tasks);
 
         List<Task> sessionTasks = new ArrayList<>();
