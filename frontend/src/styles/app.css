@@ -33,7 +33,7 @@ body {
 .dashboard-top-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
   padding: 0 24px;
   height: 54px;
   background: var(--gmu-green);
@@ -42,6 +42,11 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.18);
   font-size: 1rem;
   font-weight: 600;
+}
+.dashboard-top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .dashboard-top-bar-brand {
   color: var(--gmu-gold);
@@ -52,6 +57,35 @@ body {
 }
 .dashboard-top-bar-page {
   color: white;
+}
+.dashboard-top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* import/export buttons on the top bar */
+.topbar-csv-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.13s;
+  white-space: nowrap;
+}
+.topbar-csv-btn:hover {
+  opacity: 0.85;
+}
+.topbar-csv-export {
+  background: var(--gmu-gold);
+  color: var(--gmu-green-dark);
+}
+.topbar-csv-import {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
 }
 
 .app-container {
@@ -166,7 +200,7 @@ body {
   border-radius: 7px;
   font-size: 1.1rem;
   cursor: pointer;
-  margin-left: 6px;
+  margin-left: 0;
   transition: background 0.13s, color 0.13s;
 }
 .calendar-nav button:hover {

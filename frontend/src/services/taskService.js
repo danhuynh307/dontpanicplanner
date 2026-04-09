@@ -1,6 +1,34 @@
 // frontend/src/services/taskService.js
 const API_BASE = "http://localhost:8080/api/tasks";
 
+// triggers a browser download of all tasks as tasks.csv
+export async function exportTasksCSV() {
+  const response = await fetch(`${API_BASE}/export`);
+  if (!response.ok) throw new Error("Failed to export tasks");
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "tasks.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// uploads a CSV file and returns the list of imported tasks
+export async function importTasksCSV(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/import`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) throw new Error("Failed to import tasks");
+  return response.json();
+}
+
 export async function getTasks() {
   const response = await fetch(API_BASE);
   if (!response.ok) {
