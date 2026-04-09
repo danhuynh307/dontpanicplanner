@@ -1,8 +1,12 @@
 package com.example.dontpanicplanner;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,5 +78,35 @@ public class TaskController {
 
         taskStore.remove(index);
         return ResponseEntity.noContent().build();
+    }
+
+    // Returns all current tasks as a downloadable CSV file.
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportCSV() throws IOException {
+        List<Task> tasks = new ArrayList<>();
+        for (int i = 0; i < taskStore.size(); i++) {
+            tasks.add(taskStore.get(i));
+        }
+
+        byte[] csvBytes = TaskCSVHandler.exportToBytes(tasks);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "tasks.csv");
+
+        return ResponseEntity.ok().headers(headers).body(csvBytes);
+    }
+
+    // Accepts a CSV file upload and adds all parsed tasks to the store.
+    @PostMapping("/import")
+    public ResponseEntity<List<Task>> importCSV(@RequestParam("file") MultipartFile file) throws IOException {
+        List<Task> imported = TaskCSVHandler.importFromBytes(file.getBytes());
+
+        for (Task task : imported) {
+            priorityScoreService.applyPriorityScore(task);
+            taskStore.add(task);
+        }
+
+        return ResponseEntity.ok(imported);
     }
 }

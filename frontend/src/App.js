@@ -9,7 +9,7 @@ import TaskListPanel from "./components/TaskListPanel";
 import WeeklyAvailability from "./pages/WeeklyAvailability";
 import WeeklySchedule from "./pages/WeeklySchedule";
 //services
-import { getTasks, createTask } from "./services/taskService";
+import { getTasks, createTask, exportTasksCSV, importTasksCSV } from "./services/taskService";
 
 import "./styles/app.css";
 
@@ -65,13 +65,57 @@ function Dashboard() {
     setTasks((prevTasks) => prevTasks.filter((_, index) => index !== taskIndex));
   };
 
+  // downloads all tasks as a CSV file
+  const handleExport = async () => {
+    try {
+      await exportTasksCSV();
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  };
+
+  // uploads a CSV file, imports the tasks, then refreshes the task list
+  const handleImport = async (file) => {
+    try {
+      await importTasksCSV(file);
+      await loadTasks();
+    } catch (error) {
+      console.error("Import failed:", error);
+    }
+  };
+
   return (
     <div className="dashboard-wrapper">
       {/* GMU top bar */}
       <div className="dashboard-top-bar">
-        <span className="dashboard-top-bar-brand">Don't Panic Planner</span>
-        <span className="dashboard-top-bar-sep">|</span>
-        <span className="dashboard-top-bar-page">Dashboard</span>
+        <div className="dashboard-top-bar-left">
+          <span className="dashboard-top-bar-brand">Don't Panic Planner</span>
+          <span className="dashboard-top-bar-sep">|</span>
+          <span className="dashboard-top-bar-page">Dashboard</span>
+        </div>
+
+        <div className="dashboard-top-bar-actions">
+          {/* hidden file input triggered by Import button */}
+          <input
+            id="csv-import-input"
+            type="file"
+            accept=".csv"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              if (e.target.files[0]) handleImport(e.target.files[0]);
+              e.target.value = "";
+            }}
+          />
+          <button
+            className="topbar-csv-btn topbar-csv-import"
+            onClick={() => document.getElementById("csv-import-input").click()}
+          >
+            &#8593; Import CSV
+          </button>
+          <button className="topbar-csv-btn topbar-csv-export" onClick={handleExport}>
+            &#8595; Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="app-container">

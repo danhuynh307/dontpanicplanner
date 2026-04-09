@@ -79,7 +79,6 @@ function CalendarView({ selectedDate, setSelectedDate, tasks }) {
               <span className="legend-box current-day-box"></span>
               <span>Current day</span>
             </div>
-
             <div className="legend-item">
               <span className="legend-box selected-day-box"></span>
               <span>Selected day</span>
@@ -87,8 +86,8 @@ function CalendarView({ selectedDate, setSelectedDate, tasks }) {
           </div>
 
         <div className="calendar-nav">
-          <button onClick={handlePrev}>{"<"}</button>
-          <button onClick={handleNext}>{">"}</button>
+          <button onClick={handlePrev}>&#8249;</button>
+          <button onClick={handleNext}>&#8250;</button>
         </div>
       </div>
 
