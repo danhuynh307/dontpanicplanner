@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 @Entity
 @Table(name = "tasks")
-@Access(AccessType.FIELD)   // JPA reads fields directly — no getters/setters required
+@Access(AccessType.FIELD)
 public class Task {
 
     // ── CSV header matches field order in toCSV() / fromCSV() ──
@@ -15,7 +15,7 @@ public class Task {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
-    // ── Fields ────────────────────────────────────────────────
+    // Fields
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
