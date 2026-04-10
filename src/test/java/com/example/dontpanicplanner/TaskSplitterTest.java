@@ -143,4 +143,31 @@ class TaskSplitterTest {
             assertNotNull(session.getPriorityScore());
         }
     }
+    @Test
+void getUnscheduledTasks_returnsTasksNotInSchedule() {
+    // Create two tasks
+    Task task1 = makeTask("Essay", 1.0);
+    Task task2 = makeTask("Quiz", 0.5);
+
+    TaskDataStructure<Task> tasks = new TaskDataStructure<>();
+    tasks.add(task1);
+    tasks.add(task2);
+
+    // Only schedule task1
+    List<Task> scheduledList = new ArrayList<>();
+    scheduledList.add(task1);
+
+    AvailabilityBlock block = new AvailabilityBlock("Monday", "09:00", "10:00");
+    ScheduledTaskGroup group = new ScheduledTaskGroup(List.of(block), scheduledList);
+
+    List<ScheduledTaskGroup> scheduledGroups = new ArrayList<>();
+    scheduledGroups.add(group);
+
+    // task2 should be unscheduled
+    ScheduleGenerator generator = new ScheduleGenerator();
+    List<Task> unscheduled = generator.getUnscheduledTasks(tasks, scheduledGroups);
+
+    assertEquals(1, unscheduled.size());
+    assertEquals("Quiz", unscheduled.get(0).getName());
+}
 }
