@@ -1,5 +1,6 @@
 package com.example.dontpanicplanner;
-
+import java.util.HashSet;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,4 +49,40 @@ public class ScheduleGenerator {
 
         return result;
     }
+ /**
+ * Returns all tasks that could NOT be scheduled into any availability block.
+ * These are reported back to the user so they know which tasks need attention.
+ * AR
+ *
+ */
+public List<Task> getUnscheduledTasks(
+        TaskDataStructure<Task> tasks,
+        List<ScheduledTaskGroup> scheduledGroups)
+{
+    // Collect the names of all tasks that made it into the schedule
+    Set<String> scheduledTaskNames = new HashSet<>();
+
+    for (ScheduledTaskGroup group : scheduledGroups) {
+        for (Task scheduledTask : group.getTasks()) {
+            // Strip the "(Part X/Y)" suffix to get the original task name
+            String name = scheduledTask.getName();
+            if (name.contains(" (Part ")) {
+                name = name.substring(0, name.indexOf(" (Part "));
+            }
+            scheduledTaskNames.add(name);
+        }
+    }
+
+    // Find tasks from the full list that are NOT in the schedule
+    List<Task> unscheduled = new ArrayList<>();
+
+    for (int i = 0; i < tasks.size(); i++) {
+        Task task = tasks.get(i);
+        if (!scheduledTaskNames.contains(task.getName())) {
+            unscheduled.add(task);
+        }
+    }
+
+    return unscheduled;
+}
 }
