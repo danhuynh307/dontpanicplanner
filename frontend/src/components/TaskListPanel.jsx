@@ -1,5 +1,6 @@
 import React from "react";
 import "../styles/app.css";
+import { getTasks, deleteTask } from "../services/taskService";
 
 function TaskListPanel({
   tasks,
@@ -38,7 +39,7 @@ function TaskListPanel({
                   <span className={badgeClass}>
                     {score != null ? Math.round(score) : "—"}
                   </span>
-                  <button onClick={() => onDeleteTask(i)} className="delete-button">
+                  <button onClick={() => onDeleteTask(task)} className="delete-button">
                     Delete
                   </button>
                 </div>

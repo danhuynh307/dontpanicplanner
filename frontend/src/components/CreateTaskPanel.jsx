@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-// user inputted form
 function CreateTaskPanel({ addTask, selectedDate }) {
   const formatDateToYYYYMMDD = (date) => {
     if (!date) return "";
@@ -11,6 +10,8 @@ function CreateTaskPanel({ addTask, selectedDate }) {
   };
 
   const today = formatDateToYYYYMMDD(new Date());
+
+  const [isOpen, setIsOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -57,6 +58,7 @@ function CreateTaskPanel({ addTask, selectedDate }) {
 
     await addTask(cleanedData);
 
+    // reset form
     setFormData({
       name: "",
       taskType: "Assignment",
@@ -69,67 +71,74 @@ function CreateTaskPanel({ addTask, selectedDate }) {
 
   return (
     <div className="task-panel">
-      <h3>Create Task</h3>
+      <h3
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ cursor: "pointer" }}
+      >
+        Create Task {isOpen ? "▲" : "▼"}
+      </h3>
 
-      <form onSubmit={handleSubmit} className="task-form">
-        <label>Task Name</label>
-        <input
-          type="text"
-          name="name"
-          placeholder="Task title"
-          value={formData.name}
-          onChange={handleChange}
-        />
+      {isOpen && (
+        <form onSubmit={handleSubmit} className="task-form">
+          <label>Task Name</label>
+          <input
+            type="text"
+            name="name"
+            placeholder="Task title"
+            value={formData.name}
+            onChange={handleChange}
+          />
 
-        <label>Task Type</label>
-        <select
-          name="taskType"
-          value={formData.taskType}
-          onChange={handleChange}
-        >
-          <option>Assignment</option>
-          <option>Study</option>
-          <option>Essay</option>
-          <option>Project</option>
-        </select>
+          <label>Task Type</label>
+          <select
+            name="taskType"
+            value={formData.taskType}
+            onChange={handleChange}
+          >
+            <option>Assignment</option>
+            <option>Study</option>
+            <option>Essay</option>
+            <option>Project</option>
+          </select>
 
-        <label>Estimated Time (hours)</label>
-        <input
-          type="number"
-          name="estimatedTime"
-          value={formData.estimatedTime}
-          onChange={handleChange}
-          min="0"
-        />
+          <label>Estimated Time (hours)</label>
+          <input
+            type="number"
+            name="estimatedTime"
+            value={formData.estimatedTime}
+            onChange={handleChange}
+            min="0"
+          />
 
-        <label>Due Date</label>
-        <input
-          type="date"
-          name="dueDate"
-          value={formData.dueDate}
-          onChange={handleChange}
-          min={today}
-        />
+          <label>Due Date</label>
+          <input
+            type="date"
+            name="dueDate"
+            value={formData.dueDate}
+            onChange={handleChange}
+            min={today}
+          />
 
-        <label>Grade Weight (%)</label>
-        <input
-          type="number"
-          name="gradeWeight"
-          value={formData.gradeWeight}
-          onChange={handleChange}
-        />
+          <label>Grade Weight (%)</label>
+          <input
+            type="number"
+            name="gradeWeight"
+            value={formData.gradeWeight}
+            onChange={handleChange}
+          />
 
-        <label>Current Grade (%)</label>
-        <input
-          type="number"
-          name="currentGrade"
-          value={formData.currentGrade}
-          onChange={handleChange}
-          min="0"
-        />
+          <label>Current Grade (%)</label>
+          <input
+            type="number"
+            name="currentGrade"
+            value={formData.currentGrade}
+            onChange={handleChange}
+            min="0"
+          />
 
-        <button type="submit">Add Task</button>
-      </form>
+          <button type="submit">Add Task</button>
+        </form>
+      )}
     </div>
   );
 }

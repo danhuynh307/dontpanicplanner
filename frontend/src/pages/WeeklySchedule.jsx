@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import WeeklyTaskList from "../components/WeeklyTaskList";
 import WeeklyCalendarView from "../components/WeeklyCalendarView";
 import { fetchWeeklySchedule } from "../services/scheduleService";
-import { getTasks } from "../services/taskService";
+import { getTasks, deleteTask } from "../services/taskService";
 import "../styles/WeeklySchedule.css";
 
 function WeeklySchedule() {
@@ -63,9 +63,31 @@ function WeeklySchedule() {
     setWeekStartDate(newDate);
   };
 
-  // Stubs — wire up to real handlers later
-  const handleRemoveTask = (taskIndex) => {
-    console.log("Remove task at index:", taskIndex);
+  const handleRemoveTask = async (taskIndex) => {
+    try {
+      await deleteTask(taskIndex);
+      await loadPageData();
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
+  };
+
+  const handleDeleteFromCalendar = async (block) => {
+    try {
+      const originalTaskName = block.taskTitle.replace(/\s*\(Part \d+\/\d+\)$/, "");
+
+      const taskIndex = tasks.findIndex((task) => task.name === originalTaskName);
+
+      if (taskIndex === -1) {
+        console.error("Could not find matching task for block:", block);
+        return;
+      }
+
+      await deleteTask(taskIndex);
+      await loadPageData();
+    } catch (error) {
+      console.error("Failed to delete task from calendar:", error);
+    }
   };
 
   const handleUpdateTask = (taskIndex) => {
@@ -78,7 +100,6 @@ function WeeklySchedule() {
 
   return (
     <div className="weekly-schedule-wrapper">
-      {/* GMU-style top bar */}
       <div className="schedule-top-bar">
         <button className="schedule-back-btn" onClick={() => navigate("/")}>
           &#8592; Back
@@ -108,6 +129,7 @@ function WeeklySchedule() {
               blocks={scheduleBlocks}
               onPrevWeek={handlePrevWeek}
               onNextWeek={handleNextWeek}
+              onDeleteBlock={handleDeleteFromCalendar}
             />
           </>
         )}

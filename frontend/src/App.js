@@ -9,7 +9,7 @@ import TaskListPanel from "./components/TaskListPanel";
 import WeeklyAvailability from "./pages/WeeklyAvailability";
 import WeeklySchedule from "./pages/WeeklySchedule";
 //services
-import { getTasks, createTask, exportTasksCSV, importTasksCSV } from "./services/taskService";
+import {getTasks, createTask, deleteTask as deleteTaskApi, exportTasksCSV, importTasksCSV } from "./services/taskService";
 
 import "./styles/app.css";
 
@@ -61,8 +61,30 @@ function Dashboard() {
     setShowAllTasks(false);
   };
 
-  const deleteTask = (taskIndex) => {
-    setTasks((prevTasks) => prevTasks.filter((_, index) => index !== taskIndex));
+  const deleteTask = async (taskToDelete) => {
+    try {
+      const fullTasks = await getTasks();
+
+      const taskIndex = fullTasks.findIndex(
+        (t) =>
+          t.name === taskToDelete.name &&
+          t.taskType === taskToDelete.taskType &&
+          t.dueDate === taskToDelete.dueDate &&
+          t.estimatedTime === taskToDelete.estimatedTime &&
+          t.gradeWeight === taskToDelete.gradeWeight &&
+          t.currentGrade === taskToDelete.currentGrade
+      );
+
+      if (taskIndex === -1) {
+        console.error("Task not found in backend list");
+        return;
+      }
+
+      await deleteTaskApi(taskIndex);
+      await loadTasks();
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
   };
 
   // downloads all tasks as a CSV file
