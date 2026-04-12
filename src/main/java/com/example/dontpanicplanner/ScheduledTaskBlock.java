@@ -3,16 +3,26 @@ package com.example.dontpanicplanner;
 public class ScheduledTaskBlock {
     private Long taskId;
     private String taskTitle;
-    private int dayOfWeek; // 0 = Sunday, 6 = Saturday
+    private String date;      // YYYY-MM-DD
+    private int dayOfWeek;    // 0 = Sunday, 6 = Saturday
     private String startTime; // HH:mm
     private String endTime;   // HH:mm
     private String color;
 
     public ScheduledTaskBlock() {}
 
-    public ScheduledTaskBlock(Long taskId, String taskTitle, int dayOfWeek, String startTime, String endTime, String color) {
+    public ScheduledTaskBlock(
+            Long taskId,
+            String taskTitle,
+            String date,
+            int dayOfWeek,
+            String startTime,
+            String endTime,
+            String color
+    ) {
         this.taskId = taskId;
         this.taskTitle = taskTitle;
+        this.date = date;
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -33,6 +43,14 @@ public class ScheduledTaskBlock {
 
     public void setTaskTitle(String taskTitle) {
         this.taskTitle = taskTitle;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public int getDayOfWeek() {

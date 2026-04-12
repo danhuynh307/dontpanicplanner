@@ -58,6 +58,13 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
     timeLabels.push(`${hour12}${suffix}`);
   }
 
+  const formatDateToYYYYMMDD = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+    };
+
   // Semester label (approximate based on current month)
   const getSemesterLabel = () => {
     const month = weekStartDate.getMonth() + 1;
@@ -112,7 +119,7 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
                 ))}
 
                 {blocks
-                  .filter((block) => block.dayOfWeek === dayIndex)
+                  .filter((block) => block.date === formatDateToYYYYMMDD(weekDates[dayIndex]))
                   .map((block, index) => (
                     <div
                       key={`${block.taskId}-${index}`}
