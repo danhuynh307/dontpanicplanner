@@ -1,7 +1,7 @@
 import React from "react";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const START_HOUR = 7;
+const START_HOUR = 6;
 const END_HOUR = 21;
 const HOUR_HEIGHT = 64; // px per hour
 
@@ -122,15 +122,13 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
                     >
                       <div className="weekly-task-block-inner">
                         <span className="weekly-task-block-title">{block.taskTitle}</span>
-                        {block.priorityScore != null && (
-                          <span className="weekly-task-block-score">
-                            {Math.round(block.priorityScore)}
-                          </span>
-                        )}
                       </div>
-                      <span className="weekly-task-block-time">
-                        {block.startTime} – {block.endTime}
-                      </span>
+
+                      {(timeToMinutes(block.endTime) - timeToMinutes(block.startTime)) >= 45 && (
+                        <span className="weekly-task-block-time">
+                          {block.startTime} – {block.endTime}
+                        </span>
+                      )}
                     </div>
                   ))}
               </div>

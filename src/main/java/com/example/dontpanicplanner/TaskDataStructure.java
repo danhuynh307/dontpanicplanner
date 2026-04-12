@@ -157,5 +157,13 @@ public class TaskDataStructure<T>  {
         }
     }
 
+    // clears all tasks
+    public void clear() {
+        for (int i = 0; i < size; i++) {
+            tasks[i] = null;
+        }
+        size = 0;
+    }
+
 
 }

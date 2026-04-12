@@ -72,8 +72,8 @@ function WeeklySchedule() {
     console.log("Update task at index:", taskIndex);
   };
 
-  const handleUpdateSchedule = () => {
-    console.log("Update schedule clicked");
+  const handleUpdateSchedule = async () => {
+    await loadPageData();
   };
 
   return (

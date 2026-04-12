@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -15,80 +14,52 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:3000")
 public class TaskController {
 
-    // In-memory store using the project's custom data structure
-    private final TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
-    private final PriorityScoreService priorityScoreService;
+    private final TaskService taskService;
 
-    public TaskController(PriorityScoreService priorityScoreService) {
-        this.priorityScoreService = priorityScoreService;
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
     }
 
-    // Accepts a Task object in the request body, calculates priority, and adds it.
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        priorityScoreService.applyPriorityScore(task);
-        taskStore.add(task);
-        return ResponseEntity.ok(task);
+        return ResponseEntity.ok(taskService.addTask(task));
     }
 
-    // Returns all tasks currently in the store, with fresh priority scores.
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
-        List<Task> result = new ArrayList<>();
-
-        for (int i = 0; i < taskStore.size(); i++) {
-            Task task = taskStore.get(i);
-            priorityScoreService.applyPriorityScore(task);
-            result.add(task);
-        }
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(taskService.getAllTasks());
     }
 
-    // Returns a single task by its position index in the store.
     @GetMapping("/{index}")
     public ResponseEntity<Task> getTask(@PathVariable int index) {
-        if (index < 0 || index >= taskStore.size()) {
+        Task task = taskService.getTask(index);
+        if (task == null) {
             return ResponseEntity.notFound().build();
         }
-
-        Task task = taskStore.get(index);
-        priorityScoreService.applyPriorityScore(task);
         return ResponseEntity.ok(task);
     }
 
-    // Replaces the task at the given index with the new task from the request body.
     @PutMapping("/{index}")
     public ResponseEntity<Task> updateTask(@PathVariable int index, @RequestBody Task updatedTask) {
-        if (index < 0 || index >= taskStore.size()) {
+        Task task = taskService.updateTask(index, updatedTask);
+        if (task == null) {
             return ResponseEntity.notFound().build();
         }
-
-        priorityScoreService.applyPriorityScore(updatedTask);
-        taskStore.set(index, updatedTask);
-        return ResponseEntity.ok(updatedTask);
+        return ResponseEntity.ok(task);
     }
 
-    // Removes the task at the given index from the store.
     @DeleteMapping("/{index}")
     public ResponseEntity<Void> deleteTask(@PathVariable int index) {
-        if (index < 0 || index >= taskStore.size()) {
+        boolean deleted = taskService.deleteTask(index);
+        if (!deleted) {
             return ResponseEntity.notFound().build();
         }
-
-        taskStore.remove(index);
         return ResponseEntity.noContent().build();
     }
 
-    // Returns all current tasks as a downloadable CSV file.
     @GetMapping("/export")
     public ResponseEntity<byte[]> exportCSV() throws IOException {
-        List<Task> tasks = new ArrayList<>();
-        for (int i = 0; i < taskStore.size(); i++) {
-            tasks.add(taskStore.get(i));
-        }
-
-        byte[] csvBytes = TaskCSVHandler.exportToBytes(tasks);
+        byte[] csvBytes = TaskCSVHandler.exportToBytes(taskService.exportTasks());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("text/csv"));
@@ -97,16 +68,10 @@ public class TaskController {
         return ResponseEntity.ok().headers(headers).body(csvBytes);
     }
 
-    // Accepts a CSV file upload and adds all parsed tasks to the store.
     @PostMapping("/import")
     public ResponseEntity<List<Task>> importCSV(@RequestParam("file") MultipartFile file) throws IOException {
         List<Task> imported = TaskCSVHandler.importFromBytes(file.getBytes());
-
-        for (Task task : imported) {
-            priorityScoreService.applyPriorityScore(task);
-            taskStore.add(task);
-        }
-
+        taskService.importTasks(imported);
         return ResponseEntity.ok(imported);
     }
 }

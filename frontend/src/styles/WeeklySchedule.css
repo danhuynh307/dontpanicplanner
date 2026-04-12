@@ -362,16 +362,14 @@
   gap: 2px;
 }
 .weekly-task-block-inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 4px;
+  display: block;
 }
 .weekly-task-block-title {
   display: block;
-  line-height: 1.25;
-  flex: 1;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Priority score badge on the calendar block */
 .weekly-task-block-score {

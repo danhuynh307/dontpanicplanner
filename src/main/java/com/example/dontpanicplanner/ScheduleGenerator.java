@@ -1,4 +1,5 @@
 package com.example.dontpanicplanner;
+import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.ArrayList;
@@ -6,6 +7,7 @@ import java.util.List;
 
 
 // computes scheduling logic, places tasks inside availability blocks based on priority score
+@Service
 public class ScheduleGenerator {
 
     public List<ScheduledTaskGroup> generateSchedule(TaskDataStructure<Task> tasks, List<AvailabilityBlock> availabilityBlocks) {
@@ -84,5 +86,5 @@ public List<Task> getUnscheduledTasks(
     }
 
     return unscheduled;
-}
+    }
 }
