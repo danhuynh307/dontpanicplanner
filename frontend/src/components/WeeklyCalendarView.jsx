@@ -5,7 +5,7 @@ const START_HOUR = 6;
 const END_HOUR = 21;
 const HOUR_HEIGHT = 64; // px per hour
 
-function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
+function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWeek }) {
   const getWeekDates = () => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -49,6 +49,20 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
       height: `${height}px`,
       backgroundColor: block.color || "#8ab4f8",
     };
+  };
+
+  const getBlockPriorityScore = (block) => {
+    if (block.priorityScore != null) return block.priorityScore;
+    if (block.priority_score != null) return block.priority_score;
+    if (block.score != null) return block.score;
+
+    const baseTitle = block.taskTitle.replace(/\s*\(Part \d+\/\d+\)$/, "");
+
+    const matchedTask =
+      tasks?.find((task) => task.id != null && block.taskId != null && task.id === block.taskId) ||
+      tasks?.find((task) => task.name === baseTitle);
+
+    return matchedTask?.priorityScore ?? null;
   };
 
   const timeLabels = [];
@@ -128,7 +142,13 @@ function WeeklyCalendarView({ weekStartDate, blocks, onPrevWeek, onNextWeek }) {
                       title={`${block.taskTitle} (${block.startTime} - ${block.endTime})`}
                     >
                       <div className="weekly-task-block-inner">
-                        <span className="weekly-task-block-title">{block.taskTitle}</span>
+                        <span className="weekly-task-block-title">
+                          {block.taskTitle}
+                        </span>
+
+                        <span className="weekly-task-block-score">
+                          {getBlockPriorityScore(block) != null ? Math.round(getBlockPriorityScore(block)) : "--"}
+                        </span>
                       </div>
 
                       {(timeToMinutes(block.endTime) - timeToMinutes(block.startTime)) >= 45 && (

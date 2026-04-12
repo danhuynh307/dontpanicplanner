@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-function CreateTaskPanel({ addTask, selectedDate }) {
+function CreateTaskPanel({ addTask, selectedDate, untitledCount, setUntitledCount }) {
   const formatDateToYYYYMMDD = (date) => {
     if (!date) return "";
     const year = date.getFullYear();
@@ -49,8 +49,15 @@ function CreateTaskPanel({ addTask, selectedDate }) {
       return;
     }
 
+    let taskName = formData.name.trim();
+        if (taskName === "") {
+          taskName = `Task ${untitledCount}`;
+          setUntitledCount((prev) => prev + 1);
+        }
+
     const cleanedData = {
       ...formData,
+      name: taskName,
       estimatedTime: Number(formData.estimatedTime),
       gradeWeight: Number(formData.gradeWeight),
       currentGrade: Number(formData.currentGrade),

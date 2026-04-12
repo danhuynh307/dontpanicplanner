@@ -127,6 +127,7 @@ function WeeklySchedule() {
             <WeeklyCalendarView
               weekStartDate={weekStartDate}
               blocks={scheduleBlocks}
+              tasks={tasks}
               onPrevWeek={handlePrevWeek}
               onNextWeek={handleNextWeek}
               onDeleteBlock={handleDeleteFromCalendar}

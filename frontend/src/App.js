@@ -48,6 +48,14 @@ function Dashboard() {
     return `${year}-${month}-${day}`;
   };
 
+  const [untitledCount, setUntitledCount] = useState(() => {
+      return Number(localStorage.getItem("untitledCount")) || 1;
+    });
+
+    useEffect(() => {
+      localStorage.setItem("untitledCount", untitledCount);
+    }, [untitledCount]);
+
   const displayedTasks = useMemo(() => {
     if (showAllTasks) return tasks;
     if (!selectedDate) return [];
@@ -153,6 +161,8 @@ function Dashboard() {
         <div className="right-panel">
           <CreateTaskPanel
             addTask={addTask}
+            untitledCount={untitledCount}
+            setUntitledCount={setUntitledCount}
             selectedDate={selectedDate}
           />
           <TaskListPanel
