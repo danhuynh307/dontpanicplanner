@@ -10,8 +10,16 @@ import java.util.List;
 @Service
 public class ScheduleGenerator {
 
+    private final TaskRankSystem taskRankSystem;
+    private final PriorityScoreService priorityScoreService;
+
+    public ScheduleGenerator(TaskRankSystem taskRankSystem, PriorityScoreService priorityScoreService) {
+        this.taskRankSystem = taskRankSystem;
+        this.priorityScoreService = priorityScoreService;
+    }
+
     public List<ScheduledTaskGroup> generateSchedule(TaskDataStructure<Task> tasks, List<AvailabilityBlock> availabilityBlocks) {
-        TaskRankSystem.rankTasks(tasks);
+        taskRankSystem.rankTasks(tasks);
 
         List<Task> sessionTasks = new ArrayList<>();
 

@@ -13,13 +13,13 @@ public class TaskRankSystem {
     }
 
     // calculates scores and sorts tasks by priority
-    public static void rankTasks(TaskDataStructure<Task> tasks) {
+    public void rankTasks(TaskDataStructure<Task> tasks) {
         applyScores(tasks);
         sortByPriority(tasks);
     }
 
     // Compute scores for all tasks
-    private static void applyScores(TaskDataStructure<Task> tasks) {
+    private void applyScores(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
             scoreService.applyPriorityScore(t);
@@ -27,7 +27,7 @@ public class TaskRankSystem {
     }
 
     // Sorts tasks
-    private static void sortByPriority(TaskDataStructure<Task> tasks) {
+    private void sortByPriority(TaskDataStructure<Task> tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             for (int j = 0; j < tasks.size() - 1; j++) {
 

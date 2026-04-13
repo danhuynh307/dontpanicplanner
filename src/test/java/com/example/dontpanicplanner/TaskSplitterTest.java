@@ -165,9 +165,12 @@ void getUnscheduledTasks_returnsTasksNotInSchedule() {
     scheduledGroups.add(group);
 
     // task2 should be unscheduled
-    ScheduleGenerator generator = new ScheduleGenerator();
-    List<Task> unscheduled = generator.getUnscheduledTasks(tasks, scheduledGroups);
+        // edit: non static
+    PriorityScoreService priorityScoreService = new PriorityScoreService();
+    TaskRankSystem taskRankSystem = new TaskRankSystem(priorityScoreService);
+    ScheduleGenerator generator = new ScheduleGenerator(taskRankSystem, priorityScoreService);
 
+    List<Task> unscheduled = generator.getUnscheduledTasks(tasks, scheduledGroups);
     assertEquals(1, unscheduled.size());
     assertEquals("Quiz", unscheduled.get(0).getName());
 }

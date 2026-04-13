@@ -14,15 +14,18 @@ public class WeeklyScheduleService {
     private final TaskService taskService;
     private final AvailabilityService availabilityService;
     private final PriorityScoreService priorityScoreService;
+    private final TaskRankSystem taskRankSystem;
 
     public WeeklyScheduleService(
             TaskService taskService,
             AvailabilityService availabilityService,
-            PriorityScoreService priorityScoreService
+            PriorityScoreService priorityScoreService,
+            TaskRankSystem taskRankSystem
     ) {
         this.taskService = taskService;
         this.availabilityService = availabilityService;
         this.priorityScoreService = priorityScoreService;
+        this.taskRankSystem = taskRankSystem;
     }
 
     public WeeklyScheduleResponse generateWeeklySchedule(LocalDate weekStart) {
@@ -39,7 +42,7 @@ public class WeeklyScheduleService {
             rankedTasks.add(task);
         }
 
-        TaskRankSystem.rankTasks(rankedTasks);
+        taskRankSystem.rankTasks(rankedTasks);
 
         List<Task> sessionTasks = new ArrayList<>();
         for (int i = 0; i < rankedTasks.size(); i++) {

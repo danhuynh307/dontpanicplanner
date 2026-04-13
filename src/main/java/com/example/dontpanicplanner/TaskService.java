@@ -11,9 +11,11 @@ public class TaskService {
 
     private final TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
     private final PriorityScoreService priorityScoreService;
+    private final TaskRankSystem taskRankSystem;
 
-    public TaskService(PriorityScoreService priorityScoreService) {
+    public TaskService(PriorityScoreService priorityScoreService, TaskRankSystem taskRankSystem) {
         this.priorityScoreService = priorityScoreService;
+        this.taskRankSystem = taskRankSystem;
     }
 
     public void loadFromFile(String filePath) {
@@ -30,12 +32,19 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks() {
-        List<Task> result = new ArrayList<>();
+        TaskDataStructure<Task> rankedCopy = new TaskDataStructure<>();
         for (int i = 0; i < taskStore.size(); i++) {
             Task task = taskStore.get(i);
             priorityScoreService.applyPriorityScore(task);
-            result.add(task);
+            rankedCopy.add(task);
         }
+        taskRankSystem.rankTasks(rankedCopy);
+
+        List<Task> result = new ArrayList<>();
+        for (int i = 0; i < rankedCopy.size(); i++) {
+            result.add(rankedCopy.get(i));
+        }
+
         return result;
     }
 
