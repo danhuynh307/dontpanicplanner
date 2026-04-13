@@ -49,12 +49,12 @@ function Dashboard() {
   };
 
   const [untitledCount, setUntitledCount] = useState(() => {
-      return Number(localStorage.getItem("untitledCount")) || 1;
-    });
+    return Number(sessionStorage.getItem("untitledCount")) || 1;
+  });
 
-    useEffect(() => {
-      localStorage.setItem("untitledCount", untitledCount);
-    }, [untitledCount]);
+  useEffect(() => {
+    sessionStorage.setItem("untitledCount", untitledCount);
+  }, [untitledCount]);
 
   const displayedTasks = useMemo(() => {
     if (showAllTasks) return tasks;
