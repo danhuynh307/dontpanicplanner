@@ -15,144 +15,87 @@ public class WeeklyScheduleService {
     private final AvailabilityService availabilityService;
     private final PriorityScoreService priorityScoreService;
     private final TaskRankSystem taskRankSystem;
+    private final ScheduleGenerator scheduleGenerator;
 
-    public WeeklyScheduleService(
-            TaskService taskService,
-            AvailabilityService availabilityService,
-            PriorityScoreService priorityScoreService,
-            TaskRankSystem taskRankSystem
-    ) {
+    public WeeklyScheduleService(TaskService taskService, AvailabilityService availabilityService, PriorityScoreService priorityScoreService, TaskRankSystem taskRankSystem, ScheduleGenerator scheduleGenerator) {
         this.taskService = taskService;
         this.availabilityService = availabilityService;
         this.priorityScoreService = priorityScoreService;
         this.taskRankSystem = taskRankSystem;
+        this.scheduleGenerator = scheduleGenerator;
     }
 
+    // generates weekly schedule using schedule generator. sets the week so that tasks do not persist over the next week.
     public WeeklyScheduleResponse generateWeeklySchedule(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
-
-        // Choose a stable planning anchor.
-        // This keeps earlier weeks "consuming" tasks before later weeks are built.
         LocalDate planningStart = getPlanningStart(weekStart);
 
-        List<Task> allTasks = taskService.getAllTasks();
-        TaskDataStructure<Task> rankedTasks = new TaskDataStructure<>();
-
-        for (Task task : allTasks) {
-            rankedTasks.add(task);
-        }
-
-        taskRankSystem.rankTasks(rankedTasks);
-
-        List<Task> sessionTasks = new ArrayList<>();
-        for (int i = 0; i < rankedTasks.size(); i++) {
-            Task task = rankedTasks.get(i);
-            sessionTasks.addAll(TaskSplitter.splitInto30MinSessions(task, priorityScoreService));
+        TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
+        for (Task task : taskService.getAllTasks()) {
+            taskStore.add(task);
         }
 
         List<AvailabilityBlock> recurringAvailability = availabilityService.getAvailability();
-        List<DatedAvailabilitySlot> datedSlots = buildDatedSlots(recurringAvailability, planningStart, weekEnd);
-
-        List<ScheduledTaskBlock> allScheduledBlocks = placeSessionsAcrossSlots(sessionTasks, datedSlots);
-
-        List<ScheduledTaskBlock> requestedWeekBlocks = new ArrayList<>();
-        for (ScheduledTaskBlock block : allScheduledBlocks) {
-            LocalDate blockDate = LocalDate.parse(block.getDate());
-            if (!blockDate.isBefore(weekStart) && !blockDate.isAfter(weekEnd)) {
-                requestedWeekBlocks.add(block);
-            }
-        }
-
-
-
-
-        return new WeeklyScheduleResponse(
-                weekStart.toString(),
-                weekEnd.toString(),
-                requestedWeekBlocks
-        );
+        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, weekStart, weekEnd);
+        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, weekAvailability);
+        List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart);
+        return new WeeklyScheduleResponse(weekStart.toString(), weekEnd.toString(), blocks);
     }
 
+    // get starting date from local time
     private LocalDate getPlanningStart(LocalDate requestedWeekStart) {
         LocalDate today = LocalDate.now();
         return today.minusDays(today.getDayOfWeek().getValue() % 7);
     }
 
-    private List<DatedAvailabilitySlot> buildDatedSlots(
-            List<AvailabilityBlock> recurringAvailability,
-            LocalDate startDate,
-            LocalDate endDate
-    ) {
-        List<DatedAvailabilitySlot> slots = new ArrayList<>();
+    // helper that builds the blocks needed
+    private List<AvailabilityBlock> buildWeekAvailability(List<AvailabilityBlock> recurringAvailability, LocalDate weekStart, LocalDate weekEnd) {
+        List<AvailabilityBlock> result = new ArrayList<>();
 
-        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-            int actualDayOfWeek = toCalendarDayIndex(date);
+        for (LocalDate date = weekStart; !date.isAfter(weekEnd); date = date.plusDays(1)) {
+            String dayName = date.getDayOfWeek().name();
 
             for (AvailabilityBlock block : recurringAvailability) {
-                int blockDay = mapDayOfWeek(block.getDayOfWeek());
-                if (blockDay == actualDayOfWeek) {
-                    slots.add(new DatedAvailabilitySlot(
-                            date.toString(),
-                            actualDayOfWeek,
-                            block.getStartTime(),
-                            block.getEndTime()
-                    ));
+                if (block.getDayOfWeek() != null &&
+                        block.getDayOfWeek().trim().equalsIgnoreCase(dayName)) {
+                    result.add(block);
                 }
             }
         }
 
-        return slots;
+        return result;
     }
 
-    private List<ScheduledTaskBlock> placeSessionsAcrossSlots(
-            List<Task> sessionTasks,
-            List<DatedAvailabilitySlot> slots
-    ) {
+    // converts task groups into blocks (storing the week of the task as well)
+    private List<ScheduledTaskBlock> convertGroupsToBlocks(List<ScheduledTaskGroup> groups, LocalDate weekStart) {
         List<ScheduledTaskBlock> blocks = new ArrayList<>();
         long id = 1;
-        int sessionIndex = 0;
 
-        for (DatedAvailabilitySlot slot : slots) {
-            LocalTime currentStart = LocalTime.parse(slot.getStartTime());
-            LocalTime slotEnd = LocalTime.parse(slot.getEndTime());
+        for (int i = 0; i < groups.size(); i++) {
+            ScheduledTaskGroup group = groups.get(i);
 
-            while (sessionIndex < sessionTasks.size()) {
-                Task task = sessionTasks.get(sessionIndex);
+            if (group.getAvailabilityBlocks().isEmpty()) {
+                continue;
+            }
 
-                if (task.getEstimatedTime() == null || task.getEstimatedTime() <= 0) {
-                    sessionIndex++;
-                    continue;
-                }
+            AvailabilityBlock block = group.getAvailabilityBlocks().get(0);
+            LocalDate date = weekStart.plusDays(i);
+            LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
+            for (Task task : group.getTasks()) {
                 long minutes = Math.round(task.getEstimatedTime() * 60);
                 LocalTime currentEnd = currentStart.plusMinutes(minutes);
 
-                if (currentEnd.isAfter(slotEnd)) {
-                    break;
-                }
-
-                blocks.add(new ScheduledTaskBlock(
-                        id++,
-                        task.getName(),
-                        slot.getDate(),
-                        slot.getDayOfWeek(),
-                        formatTime(currentStart),
-                        formatTime(currentEnd),
-                        getColorForPriority(task.getPriorityScore())
-                ));
+                blocks.add(new ScheduledTaskBlock(id++, task.getName(), date.toString(), toCalendarDayIndex(date), formatTime(currentStart), formatTime(currentEnd), getColorForPriority(task.getPriorityScore())));
 
                 currentStart = currentEnd;
-                sessionIndex++;
-            }
-
-            if (sessionIndex >= sessionTasks.size()) {
-                break;
             }
         }
 
         return blocks;
     }
 
+    // gets day of week from local time
     private int toCalendarDayIndex(LocalDate date) {
         return switch (date.getDayOfWeek()) {
             case SUNDAY -> 0;
@@ -164,10 +107,11 @@ public class WeeklyScheduleService {
             case SATURDAY -> 6;
         };
     }
-
+    // gets day of week given a string
     private int mapDayOfWeek(String day) {
-        if (day == null) return 0;
-
+        if (day == null) {
+            return 0;
+        }
         return switch (day.trim().toUpperCase()) {
             case "SUNDAY" -> 0;
             case "MONDAY" -> 1;
@@ -179,17 +123,19 @@ public class WeeklyScheduleService {
             default -> 0;
         };
     }
-
+    // converts local time to string
     private String formatTime(LocalTime time) {
         return String.format("%02d:%02d", time.getHour(), time.getMinute());
     }
-
+    // priority colors
     private String getColorForPriority(double priority) {
         if (priority >= 8) {
             return "#cf9b7d";
-        } else if (priority >= 5) {
+        }
+        else if (priority >= 5) {
             return "#89b86d";
-        } else {
+        }
+        else {
             return "#7da9cf";
         }
     }
