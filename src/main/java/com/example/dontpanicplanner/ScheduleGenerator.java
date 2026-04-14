@@ -30,7 +30,7 @@ public class ScheduleGenerator {
         Map<String, List<Task>> sessionsByTask = new LinkedHashMap<>();
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
-            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t,  priorityScoreService);
+            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, priorityScoreService);
             sessionsByTask.put(t.getName(), new ArrayList<>(splitSessions));
         }
 
