@@ -1,34 +1,59 @@
 package com.example.dontpanicplanner;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaskTest {
     public static void main(String[] args) {
-
-        TaskDataStructure<Task> tasks = new TaskDataStructure<>();
-        Task t1 = new Task("Homework", "HW", 2.0,
-                LocalDate.now().plusDays(5), 10, 85.0);
-        Task t2 = new Task("Final Exam", "Exam", 3.0,
-                LocalDate.now().plusDays(1), 25, 70.0);
-        Task t3 = new Task("Quiz", "Quiz", 1.0,
-                LocalDate.now().plusDays(7), 5, 95.0);
-        Task t4 = new Task("Project", "Project", 4.0,
-                LocalDate.now().plusDays(2), 20, 60.0);
-
-        tasks.add(t1);
-        tasks.add(t2);
-        tasks.add(t3);
-        tasks.add(t4);
-
+        // 1. ENGINE SETUP
         PriorityScoreService scoreService = new PriorityScoreService();
         TaskRankSystem rankSystem = new TaskRankSystem(scoreService);
-        rankSystem.rankTasks(tasks);
-        System.out.println("=== Ranked Tasks (Highest Priority First) ===");
+        ScheduleGenerator generator = new ScheduleGenerator(rankSystem, scoreService);
 
-        for (int i = 0; i < tasks.size(); i++) {
-            Task t = tasks.get(i);
-            System.out.println(t.getName() + " | Score: " + t.getPriorityScore() + " | Due: " + t.getDueDate());
+        // 2. AVAILABILITY: 6 Days (Monday through Saturday)
+        // Each day has plenty of room (5 hours), so the 'target' will be the limiting factor.
+        List<AvailabilityBlock> availability = new ArrayList<>();
+        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        for (String day : days) {
+            availability.add(new AvailabilityBlock(day, "09:00", "14:00"));
         }
 
+        // 3. TASKS: Two 6-hour tasks (12 hours total)
+        // 12 hours / 6 days = 2.0 hours per day target.
+        TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
+
+        // Task A: Due Thursday (4 days from Monday)
+        taskStore.add(new Task("CS Project", "Project", 6.0,
+                LocalDate.now().plusDays(3), 30, 85.0));
+
+        // Task B: Due Saturday (6 days from Monday)
+        taskStore.add(new Task("Math Assignment", "HW", 6.0,
+                LocalDate.now().plusDays(5), 20, 90.0));
+
+        // 4. GENERATE
+        List<ScheduledTaskGroup> schedule = generator.generateSchedule(taskStore, availability);
+
+        // 5. OUTPUT RESULTS
+        System.out.println("=== LOAD-BALANCED SCHEDULING TEST ===");
+        System.out.println("Goal: 12h Work / 6 Days = 2.0h per day\n");
+
+        for (ScheduledTaskGroup group : schedule) {
+            AvailabilityBlock block = group.getAvailabilityBlocks().get(0);
+            double dailyTotal = 0;
+
+            System.out.println("📅 " + block.getDayOfWeek() + ":");
+
+            if (group.getTasks().isEmpty()) {
+                System.out.println("   (Empty)");
+            } else {
+                for (Task t : group.getTasks()) {
+                    System.out.println("   - " + t.getName() + " (0.5h)");
+                    dailyTotal += 0.5;
+                }
+            }
+            System.out.println("   [Day Total: " + dailyTotal + "h]\n");
+        }
     }
+
 }

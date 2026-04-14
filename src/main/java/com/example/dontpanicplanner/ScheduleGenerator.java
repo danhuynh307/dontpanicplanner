@@ -1,10 +1,7 @@
 package com.example.dontpanicplanner;
 import org.springframework.stereotype.Service;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.util.*;
 
 // computes scheduling logic, places tasks inside availability blocks based on priority score
 @Service
@@ -22,44 +19,48 @@ public class ScheduleGenerator {
     public List<ScheduledTaskGroup> generateSchedule(TaskDataStructure<Task> tasks, List<AvailabilityBlock> availabilityBlocks) {
         taskRankSystem.rankTasks(tasks);
 
-        List<Task> sessionTasks = new ArrayList<>();
+        double totalWorkHours = 0;
+        for (int i = 0; i < tasks.size(); i++) {
+            totalWorkHours += tasks.get(i).getEstimatedTime();
+        }
+
+        int numDays = availabilityBlocks.size();
+        double targetPerDay = (numDays > 0) ? totalWorkHours / numDays : 0;
+
+        Map<String, List<Task>> sessionsByTask = new LinkedHashMap<>();
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
             List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, priorityScoreService);
-            sessionTasks.addAll(splitSessions);
+            sessionsByTask.put(t.getName(), new ArrayList<>(splitSessions));
         }
 
         List<ScheduledTaskGroup> result = new ArrayList<>();
-        int sessionIndex = 0;
-
-        String currentDay = "";
-        double dailyTotalHours = 0;
         for (AvailabilityBlock block : availabilityBlocks) {
-            if (!block.getDayOfWeek().equalsIgnoreCase(currentDay)) {
-                currentDay = block.getDayOfWeek();
-                dailyTotalHours = 0;
-            }
-
             double blockCapacity = java.time.Duration.between(
                     java.time.LocalTime.parse(block.getStartTime()),
                     java.time.LocalTime.parse(block.getEndTime())
             ).toMinutes() / 60.0;
 
             List<Task> scheduledInBlock = new ArrayList<>();
-            while (sessionIndex < sessionTasks.size()) {
-                Task currentSession = sessionTasks.get(sessionIndex);
-                double sessionTime = currentSession.getEstimatedTime();
-                boolean fitsInBlock = sessionTime <= blockCapacity;
-                boolean underDailyLimit = (dailyTotalHours + sessionTime) <= MAX_HOURS_PER_DAY;
+            double currentDayWork = 0;
+            for (String taskName : sessionsByTask.keySet()) {
+                List<Task> sessions = sessionsByTask.get(taskName);
 
-                if (fitsInBlock && underDailyLimit) {
-                    scheduledInBlock.add(currentSession);
-                    blockCapacity -= sessionTime;
-                    dailyTotalHours += sessionTime;
-                    sessionIndex++;
-                }
-                else {
-                    break;
+                while (!sessions.isEmpty()) {
+                    Task session = sessions.get(0);
+                    double sessionTime = session.getEstimatedTime();
+
+                    boolean underTarget = (currentDayWork + sessionTime) <= targetPerDay;
+                    boolean fitsInBlock = sessionTime <= blockCapacity;
+                    boolean underMaxLimit = (currentDayWork + sessionTime) <= MAX_HOURS_PER_DAY;
+
+                    if (underTarget && fitsInBlock && underMaxLimit) {
+                        scheduledInBlock.add(sessions.remove(0));
+                        currentDayWork += sessionTime;
+                        blockCapacity -= sessionTime;
+                    } else {
+                        break;
+                    }
                 }
             }
             result.add(new ScheduledTaskGroup(List.of(block), scheduledInBlock));
