@@ -12,6 +12,7 @@ public class ScheduleGenerator {
 
     private final TaskRankSystem taskRankSystem;
     private final PriorityScoreService priorityScoreService;
+    private static final double MAX_HOURS_PER_DAY = 3.0;
 
     public ScheduleGenerator(TaskRankSystem taskRankSystem, PriorityScoreService priorityScoreService) {
         this.taskRankSystem = taskRankSystem;
@@ -22,43 +23,51 @@ public class ScheduleGenerator {
         taskRankSystem.rankTasks(tasks);
 
         List<Task> sessionTasks = new ArrayList<>();
-
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
-            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, new PriorityScoreService());
+            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, priorityScoreService);
             sessionTasks.addAll(splitSessions);
         }
 
         List<ScheduledTaskGroup> result = new ArrayList<>();
         int sessionIndex = 0;
 
+        String currentDay = "";
+        double dailyTotalHours = 0;
         for (AvailabilityBlock block : availabilityBlocks) {
-            double remainingTime =
-                    java.time.Duration.between(
-                            java.time.LocalTime.parse(block.getStartTime()),
-                            java.time.LocalTime.parse(block.getEndTime())
-                    ).toMinutes() / 60.0;
+            if (!block.getDayOfWeek().equalsIgnoreCase(currentDay)) {
+                currentDay = block.getDayOfWeek();
+                dailyTotalHours = 0;
+            }
 
-            List<Task> scheduled = new ArrayList<>();
+            double blockCapacity = java.time.Duration.between(
+                    java.time.LocalTime.parse(block.getStartTime()),
+                    java.time.LocalTime.parse(block.getEndTime())
+            ).toMinutes() / 60.0;
 
-            while (remainingTime > 0 && sessionIndex < sessionTasks.size()) {
-                Task current = sessionTasks.get(sessionIndex);
-                double sessionTime = current.getEstimatedTime();
+            List<Task> scheduledInBlock = new ArrayList<>();
+            while (sessionIndex < sessionTasks.size()) {
+                Task currentSession = sessionTasks.get(sessionIndex);
+                double sessionTime = currentSession.getEstimatedTime();
+                boolean fitsInBlock = sessionTime <= blockCapacity;
+                boolean underDailyLimit = (dailyTotalHours + sessionTime) <= MAX_HOURS_PER_DAY;
 
-                if (sessionTime <= remainingTime) {
-                    scheduled.add(current);
-                    remainingTime -= sessionTime;
+                if (fitsInBlock && underDailyLimit) {
+                    scheduledInBlock.add(currentSession);
+                    blockCapacity -= sessionTime;
+                    dailyTotalHours += sessionTime;
                     sessionIndex++;
-                } else {
+                }
+                else {
                     break;
                 }
             }
-
-            result.add(new ScheduledTaskGroup(List.of(block), scheduled));
+            result.add(new ScheduledTaskGroup(List.of(block), scheduledInBlock));
         }
 
         return result;
     }
+
  /**
  * Returns all tasks that could NOT be scheduled into any availability block.
  * These are reported back to the user so they know which tasks need attention.
