@@ -237,6 +237,43 @@
   color: var(--text-dark);
 }
 
+/* inline edit form inside a task card */
+.task-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.task-edit-form label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  margin-top: 2px;
+}
+.task-edit-form input,
+.task-edit-form select {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--text-dark);
+}
+.task-edit-form input:focus,
+.task-edit-form select:focus {
+  outline: none;
+  border-color: var(--gmu-green);
+}
+.task-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.task-btn-cancel {
+  background: #f3f4f6;
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+}
+
 /* Per-task action buttons */
 .weekly-task-actions {
   display: flex;
@@ -361,29 +398,30 @@
   flex-direction: column;
   gap: 2px;
 }
+/* title row + score badge side by side */
 .weekly-task-block-inner {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 .weekly-task-block-title {
-  display: block;
+  flex: 1;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Priority score badge on the calendar block */
+/* color-coded score pill — background set inline by urgency */
 .weekly-task-block-score {
-  position: absolute;
-  top: 2px;
-  right: 4px;
+  flex-shrink: 0;
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 0 4px;
-  border-radius: 3px;
-  background: #dc2626;
   color: white;
+  padding: 1px 5px;
+  border-radius: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
 }
 .weekly-task-block-time {
   font-size: 0.65rem;

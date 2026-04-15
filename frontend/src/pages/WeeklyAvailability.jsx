@@ -108,6 +108,23 @@ function convertBlocksToGrid(blocks) {
   return newGrid;
 }
 
+// parses "8", "8:30", "8am", "8:30pm" etc into { hour, minute }
+function parseTime(str) {
+  str = str.trim().toLowerCase();
+  const isPM = str.endsWith("pm");
+  const isAM = str.endsWith("am");
+  str = str.replace(/am|pm/, "").trim();
+  let hour, minute = 0;
+  if (str.includes(":")) {
+    [hour, minute] = str.split(":").map(Number);
+  } else {
+    hour = Number(str);
+  }
+  if (isPM && hour !== 12) hour += 12;
+  if (isAM && hour === 12) hour = 0;
+  return { hour, minute };
+}
+
 // all user actions (drag, click, save button)
 function WeeklyAvailability() {
   const navigate = useNavigate();
@@ -115,6 +132,7 @@ function WeeklyAvailability() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState("add");
   const [saveMessage, setSaveMessage] = useState("");
+  const [quickInputs, setQuickInputs] = useState(Array(days.length).fill(""));
 
   useEffect(() => {
     loadAvailability();
@@ -171,6 +189,45 @@ function WeeklyAvailability() {
     setSaveMessage("");
   };
 
+  // applies a "start-end" range string to a single day column in the grid
+  const applyQuickInput = (dayIndex, value) => {
+    if (!value.includes("-")) return;
+    const dashIndex = value.lastIndexOf("-");
+    const startStr = value.slice(0, dashIndex);
+    const endStr = value.slice(dashIndex + 1);
+    try {
+      const start = parseTime(startStr);
+      const end   = parseTime(endStr);
+      const startSlot = timeToSlot(`${String(start.hour).padStart(2,"0")}:${String(start.minute).padStart(2,"0")}`);
+      const endSlot   = timeToSlot(`${String(end.hour).padStart(2,"0")}:${String(end.minute).padStart(2,"0")}`);
+      if (isNaN(startSlot) || isNaN(endSlot) || startSlot >= endSlot) return;
+      const clampedStart = Math.max(0, startSlot);
+      const clampedEnd   = Math.min(totalSlots, endSlot);
+      setGrid((prev) => {
+        const updated = prev.map((day) => [...day]);
+        for (let i = clampedStart; i < clampedEnd; i++) {
+          updated[dayIndex][i] = true;
+        }
+        return updated;
+      });
+    } catch (e) {
+      // invalid input — silently ignore
+    }
+  };
+
+  const handleQuickInputChange = (dayIndex, value) => {
+    setQuickInputs((prev) => {
+      const next = [...prev];
+      next[dayIndex] = value;
+      return next;
+    });
+  };
+
+  // triggered on Enter key inside a quick-set input
+  const handleQuickInputKey = (e, dayIndex) => {
+    if (e.key === "Enter") applyQuickInput(dayIndex, quickInputs[dayIndex]);
+  };
+
   return (
     <div
       className="availability-wrapper"
@@ -208,6 +265,28 @@ function WeeklyAvailability() {
         </div>
 
         {saveMessage && <p className="save-message">{saveMessage}</p>}
+
+        {/* quick-set row: type "8:00-17:00" and press Enter to fill a day */}
+        <div className="quick-set-row">
+          <span className="quick-set-label">Quick Set</span>
+          {days.map((day, dayIndex) => (
+            <div key={day} className="quick-set-cell">
+              <input
+                className="quick-set-input"
+                placeholder="8:00-17:00"
+                value={quickInputs[dayIndex]}
+                onChange={(e) => handleQuickInputChange(dayIndex, e.target.value)}
+                onKeyDown={(e) => handleQuickInputKey(e, dayIndex)}
+              />
+              <button
+                className="quick-set-btn"
+                onClick={() => applyQuickInput(dayIndex, quickInputs[dayIndex])}
+              >
+                Set
+              </button>
+            </div>
+          ))}
+        </div>
 
         <div className="availability-grid">
           <div className="grid-corner"></div>
