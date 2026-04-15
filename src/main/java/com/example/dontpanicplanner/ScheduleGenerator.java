@@ -1,6 +1,6 @@
 package com.example.dontpanicplanner;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
 import java.util.*;
 
 // computes scheduling logic, places tasks inside availability blocks based on priority score
@@ -24,48 +24,130 @@ public class ScheduleGenerator {
             totalWorkHours += tasks.get(i).getEstimatedTime();
         }
 
-        int numDays = availabilityBlocks.size();
+        Set<LocalDate> uniqueDays = new HashSet<>();
+        for (AvailabilityBlock block : availabilityBlocks) {
+            uniqueDays.add(block.getDate());
+        }
+
+        int numDays = uniqueDays.size();
         double targetPerDay = (numDays > 0) ? totalWorkHours / numDays : 0;
+        double effectiveTargetPerDay = Math.max(targetPerDay, 0.5);
 
         Map<String, List<Task>> sessionsByTask = new LinkedHashMap<>();
+        Map<String, Task> originalTask = new HashMap<>(); // need to read due date
+
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
-            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t,priorityScoreService);
+            originalTask.put(t.getName(), t);
+
+            List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, priorityScoreService);
             sessionsByTask.put(t.getName(), new ArrayList<>(splitSessions));
         }
 
+
         List<ScheduledTaskGroup> result = new ArrayList<>();
+        Map<LocalDate, Double> scheduledHoursByDay = new HashMap<>();
+
+        // create one result group per block first
         for (AvailabilityBlock block : availabilityBlocks) {
+            result.add(new ScheduledTaskGroup(List.of(block), new ArrayList<>()));
+        }
+
+        // balance as strictly as possible
+        for (int b = 0; b < availabilityBlocks.size(); b++) {
+            AvailabilityBlock block = availabilityBlocks.get(b);
+            List<Task> scheduledInBlock = result.get(b).getTasks();
+
             double blockCapacity = java.time.Duration.between(
                     java.time.LocalTime.parse(block.getStartTime()),
                     java.time.LocalTime.parse(block.getEndTime())
             ).toMinutes() / 60.0;
 
-            List<Task> scheduledInBlock = new ArrayList<>();
-            double currentDayWork = 0;
+            // subtract anything already placed in this block
+            for (Task task : scheduledInBlock) {
+                blockCapacity -= task.getEstimatedTime();
+            }
+
+            LocalDate blockDate = block.getDate();
+            double currentDayWork = scheduledHoursByDay.getOrDefault(blockDate, 0.0);
+
             for (String taskName : sessionsByTask.keySet()) {
                 List<Task> sessions = sessionsByTask.get(taskName);
+                Task origTask = originalTask.get(taskName);
+                LocalDate dueDate = origTask.getDueDate();
+
+                if (blockDate.isAfter(dueDate)) {
+                    continue;
+                }
 
                 while (!sessions.isEmpty()) {
                     Task session = sessions.get(0);
                     double sessionTime = session.getEstimatedTime();
 
-                    boolean underTarget = (currentDayWork + sessionTime) <= targetPerDay;
+                    boolean underTarget = (currentDayWork + sessionTime) <= effectiveTargetPerDay;
                     boolean fitsInBlock = sessionTime <= blockCapacity;
-                    boolean underMaxLimit = (currentDayWork + sessionTime) <= MAX_HOURS_PER_DAY;
 
-                    if (underTarget && fitsInBlock && underMaxLimit) {
+                    if (underTarget && fitsInBlock) {
                         scheduledInBlock.add(sessions.remove(0));
                         currentDayWork += sessionTime;
+                        scheduledHoursByDay.put(blockDate, currentDayWork);
                         blockCapacity -= sessionTime;
                     } else {
                         break;
                     }
                 }
             }
-            result.add(new ScheduledTaskGroup(List.of(block), scheduledInBlock));
         }
 
+        // allow overflow AFTER balancing
+        for (int b = 0; b < availabilityBlocks.size(); b++) {
+            AvailabilityBlock block = availabilityBlocks.get(b);
+            List<Task> scheduledInBlock = result.get(b).getTasks();
+
+            double blockCapacity = java.time.Duration.between(
+                    java.time.LocalTime.parse(block.getStartTime()),
+                    java.time.LocalTime.parse(block.getEndTime())
+            ).toMinutes() / 60.0;
+
+            for (Task task : scheduledInBlock) {
+                blockCapacity -= task.getEstimatedTime();
+            }
+
+            LocalDate blockDate = block.getDate();
+            double currentDayWork = scheduledHoursByDay.getOrDefault(blockDate, 0.0);
+
+            for (String taskName : sessionsByTask.keySet()) {
+                List<Task> sessions = sessionsByTask.get(taskName);
+                Task origTask = originalTask.get(taskName);
+                LocalDate dueDate = origTask.getDueDate();
+
+                if (blockDate.isAfter(dueDate)) {
+                    continue;
+                }
+
+                while (!sessions.isEmpty()) {
+                    Task session = sessions.get(0);
+                    double sessionTime = session.getEstimatedTime();
+
+                    boolean fitsInBlock = sessionTime <= blockCapacity;
+
+                    double remainingTaskHours = getRemainingTaskHours(sessions);
+                    double futureCapacityBeforeDue = getFutureCapacityBeforeDue(availabilityBlocks, b, dueDate, scheduledHoursByDay, effectiveTargetPerDay);
+
+                    // only overflow now if waiting would leave too little room later
+                    boolean mustOverflowNow = futureCapacityBeforeDue < remainingTaskHours;
+
+                    if (fitsInBlock && mustOverflowNow) {
+                        scheduledInBlock.add(sessions.remove(0));
+                        currentDayWork += sessionTime;
+                        scheduledHoursByDay.put(blockDate, currentDayWork);
+                        blockCapacity -= sessionTime;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
         return result;
     }
 
@@ -80,7 +162,7 @@ public List<Task> getUnscheduledTasks(
         List<ScheduledTaskGroup> scheduledGroups)
 {
     // Collect the names of all tasks that made it into the schedule
-    Set<String> scheduledTaskNames = new HashSet<>();
+    Map<String, Double> scheduledHoursByTask = new HashMap<>();
 
     for (ScheduledTaskGroup group : scheduledGroups) {
         for (Task scheduledTask : group.getTasks()) {
@@ -89,7 +171,7 @@ public List<Task> getUnscheduledTasks(
             if (name.contains(" (Part ")) {
                 name = name.substring(0, name.indexOf(" (Part "));
             }
-            scheduledTaskNames.add(name);
+            scheduledHoursByTask.put(name, scheduledHoursByTask.getOrDefault(name, 0.0) + scheduledTask.getEstimatedTime());
         }
     }
 
@@ -98,11 +180,61 @@ public List<Task> getUnscheduledTasks(
 
     for (int i = 0; i < tasks.size(); i++) {
         Task task = tasks.get(i);
-        if (!scheduledTaskNames.contains(task.getName())) {
+        double scheduledHours = scheduledHoursByTask.getOrDefault(task.getName(), 0.0);
+        if (scheduledHours + 0.0001 < task.getEstimatedTime()) { // small val to see if task is partially allocated
             unscheduled.add(task);
         }
     }
 
     return unscheduled;
     }
+
+    private double getFutureCapacityBeforeDue(
+            List<AvailabilityBlock> availabilityBlocks,
+            int currentBlockIndex,
+            LocalDate dueDate,
+            Map<LocalDate, Double> scheduledHoursByDay,
+            double effectiveTargetPerDay) {
+
+        double futureCapacity = 0.0;
+
+        for (int i = currentBlockIndex + 1; i < availabilityBlocks.size(); i++) {
+            AvailabilityBlock futureBlock = availabilityBlocks.get(i);
+            LocalDate futureDate = futureBlock.getDate();
+
+            if (futureDate.isAfter(dueDate)) {
+                continue;
+            }
+
+            double blockCapacity = java.time.Duration.between(
+                    java.time.LocalTime.parse(futureBlock.getStartTime()),
+                    java.time.LocalTime.parse(futureBlock.getEndTime())
+            ).toMinutes() / 60.0;
+
+            double alreadyScheduledThatDay = scheduledHoursByDay.getOrDefault(futureDate, 0.0);
+            double remainingBalancedRoom = Math.max(0.0, effectiveTargetPerDay - alreadyScheduledThatDay);
+
+            futureCapacity += Math.min(blockCapacity, remainingBalancedRoom);
+        }
+
+        return futureCapacity;
+    }
+
+    private double getRemainingTaskHours(List<Task> sessions) {
+        double total = 0.0;
+        for (Task session : sessions) {
+            total += session.getEstimatedTime();
+        }
+        return total;
+    }
+
+
+
+
+
+
+
+
 }
+
+

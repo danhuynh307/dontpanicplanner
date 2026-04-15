@@ -36,7 +36,7 @@ public class WeeklyScheduleService {
         }
 
         List<AvailabilityBlock> recurringAvailability = availabilityService.getAvailability();
-        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, weekStart, weekEnd);
+        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, planningStart, weekEnd);
         List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, weekAvailability);
         List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart);
         return new WeeklyScheduleResponse(weekStart.toString(), weekEnd.toString(), blocks);
@@ -45,7 +45,10 @@ public class WeeklyScheduleService {
     // get starting date from local time
     private LocalDate getPlanningStart(LocalDate requestedWeekStart) {
         LocalDate today = LocalDate.now();
-        return today.minusDays(today.getDayOfWeek().getValue() % 7);
+        LocalDate startOfCurrentWeek = today.minusDays(today.getDayOfWeek().getValue() % 7);
+
+        LocalDate baseStart = requestedWeekStart.isBefore(startOfCurrentWeek) ? startOfCurrentWeek : requestedWeekStart;
+        return baseStart.isBefore(today) ? today : baseStart;
     }
 
     // helper that builds the blocks needed
@@ -58,7 +61,14 @@ public class WeeklyScheduleService {
             for (AvailabilityBlock block : recurringAvailability) {
                 if (block.getDayOfWeek() != null &&
                         block.getDayOfWeek().trim().equalsIgnoreCase(dayName)) {
-                    result.add(block);
+
+                    AvailabilityBlock datedBlock = new AvailabilityBlock();
+                    datedBlock.setDayOfWeek(block.getDayOfWeek());
+                    datedBlock.setStartTime(block.getStartTime());
+                    datedBlock.setEndTime(block.getEndTime());
+                    datedBlock.setDate(date);
+
+                    result.add(datedBlock);
                 }
             }
         }
@@ -79,7 +89,7 @@ public class WeeklyScheduleService {
             }
 
             AvailabilityBlock block = group.getAvailabilityBlocks().get(0);
-            LocalDate date = weekStart.plusDays(i);
+            LocalDate date = block.getDate();
             LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
             for (Task task : group.getTasks()) {
