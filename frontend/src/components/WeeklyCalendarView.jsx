@@ -51,6 +51,14 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
     };
   };
 
+  // returns a color string for the score badge based on urgency
+  const getScoreColor = (score) => {
+    if (score == null) return "rgba(0,0,0,0.2)";
+    if (score >= 75) return "#dc2626";
+    if (score >= 50) return "#f59e0b";
+    return "#16a34a";
+  };
+
   const getBlockPriorityScore = (block) => {
     if (block.priorityScore != null) return block.priorityScore;
     if (block.priority_score != null) return block.priority_score;
@@ -145,9 +153,12 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
                         <span className="weekly-task-block-title">
                           {block.taskTitle}
                         </span>
-
-                        <span className="weekly-task-block-score">
-                          {getBlockPriorityScore(block) != null ? Math.round(getBlockPriorityScore(block)) : "--"}
+                        {/* score badge: color-coded by urgency */}
+                        <span
+                          className="weekly-task-block-score"
+                          style={{ background: getScoreColor(getBlockPriorityScore(block)) }}
+                        >
+                          {getBlockPriorityScore(block) != null ? Math.round(getBlockPriorityScore(block)) : "–"}
                         </span>
                       </div>
 

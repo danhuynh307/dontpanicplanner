@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import WeeklyTaskList from "../components/WeeklyTaskList";
 import WeeklyCalendarView from "../components/WeeklyCalendarView";
 import { fetchWeeklySchedule } from "../services/scheduleService";
-import { getTasks, deleteTask } from "../services/taskService";
+import { getTasks, deleteTask, updateTask } from "../services/taskService";
 import "../styles/WeeklySchedule.css";
 
 function WeeklySchedule() {
@@ -90,8 +90,14 @@ function WeeklySchedule() {
     }
   };
 
-  const handleUpdateTask = (taskIndex) => {
-    console.log("Update task at index:", taskIndex);
+  // saves edited task fields to the backend then reloads
+  const handleUpdateTask = async (taskIndex, updatedData) => {
+    try {
+      await updateTask(taskIndex, updatedData);
+      await loadPageData();
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
   };
 
   const handleUpdateSchedule = async () => {
