@@ -19,17 +19,16 @@ const BLOCK_COLORS = [
   "#0d9488", // teal
 ];
 
-// builds a stable task-key → color map from all blocks on the page
+// builds a stable base-name → color map from all blocks on the page
 function buildColorMap(blocks) {
-  const keys = [];
+  const seen = [];
   blocks.forEach((block) => {
     const base = block.taskTitle?.replace(/\s*\(Part \d+\/\d+\)$/, "") ?? "";
-    const key  = block.taskId != null ? String(block.taskId) : base;
-    if (!keys.includes(key)) keys.push(key);
+    if (!seen.includes(base)) seen.push(base);
   });
   const map = {};
-  keys.forEach((key, i) => {
-    map[key] = BLOCK_COLORS[i % BLOCK_COLORS.length];
+  seen.forEach((base, i) => {
+    map[base] = BLOCK_COLORS[i % BLOCK_COLORS.length];
   });
   return map;
 }
@@ -38,11 +37,10 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
   // build color map once per render so all blocks on screen are consistent
   const colorMap = buildColorMap(blocks);
 
-  // returns the palette color for a block using its base task name as the key
+  // returns the palette color for a block, always keyed by base task name
   const getTaskColor = (block) => {
     const base = block.taskTitle?.replace(/\s*\(Part \d+\/\d+\)$/, "") ?? "";
-    const key  = block.taskId != null ? String(block.taskId) : base;
-    return colorMap[key] ?? BLOCK_COLORS[0];
+    return colorMap[base] ?? BLOCK_COLORS[0];
   };
 
   const getWeekDates = () => {
