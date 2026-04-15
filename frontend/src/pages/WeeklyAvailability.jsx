@@ -266,11 +266,19 @@ function WeeklyAvailability() {
 
         {saveMessage && <p className="save-message">{saveMessage}</p>}
 
-        {/* quick-set row: type "8:00-17:00" and press Enter to fill a day */}
-        <div className="quick-set-row">
-          <span className="quick-set-label">Quick Set</span>
+        <div className="availability-grid">
+          <div className="grid-corner"></div>
+
+          {days.map((day) => (
+            <div key={day} className="day-header">
+              {day}
+            </div>
+          ))}
+
+          {/* quick-set row lives inside the grid so columns align perfectly */}
+          <div className="quick-set-label">Quick Set</div>
           {days.map((day, dayIndex) => (
-            <div key={day} className="quick-set-cell">
+            <div key={`qs-${day}`} className="quick-set-cell">
               <input
                 className="quick-set-input"
                 placeholder="8:00-17:00"
@@ -284,16 +292,6 @@ function WeeklyAvailability() {
               >
                 Set
               </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="availability-grid">
-          <div className="grid-corner"></div>
-
-          {days.map((day) => (
-            <div key={day} className="day-header">
-              {day}
             </div>
           ))}
 
