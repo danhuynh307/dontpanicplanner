@@ -17,7 +17,14 @@ public class WeeklyScheduleService {
     private final TaskRankSystem taskRankSystem;
     private final ScheduleGenerator scheduleGenerator;
 
-    public WeeklyScheduleService(TaskService taskService, AvailabilityService availabilityService, PriorityScoreService priorityScoreService, TaskRankSystem taskRankSystem, ScheduleGenerator scheduleGenerator) {
+    // break is inserted after 1.5 hours of consecutive work
+    private static final double BREAK_TRIGGER_HOURS = 1.5;
+    // break length is 15 minutes
+    private static final double BREAK_DURATION_HOURS = 0.25;
+
+    public WeeklyScheduleService(TaskService taskService, AvailabilityService availabilityService,
+                                  PriorityScoreService priorityScoreService, TaskRankSystem taskRankSystem,
+                                  ScheduleGenerator scheduleGenerator) {
         this.taskService = taskService;
         this.availabilityService = availabilityService;
         this.priorityScoreService = priorityScoreService;
@@ -25,10 +32,10 @@ public class WeeklyScheduleService {
         this.scheduleGenerator = scheduleGenerator;
     }
 
-    // generates weekly schedule using schedule generator. sets the week so that tasks do not persist over the next week.
+    // generates weekly schedule using schedule generator
     public WeeklyScheduleResponse generateWeeklySchedule(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
-        LocalDate planningStart = getPlanningStart();
+        LocalDate planningStart = getPlanningStart(weekStart);
 
         TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
         for (Task task : taskService.getAllTasks()) {
@@ -36,29 +43,24 @@ public class WeeklyScheduleService {
         }
 
         List<AvailabilityBlock> recurringAvailability = availabilityService.getAvailability();
-        LocalDate planningEnd = getLatestDueDate(taskStore, weekEnd);
-        List<AvailabilityBlock> fullAvailability = buildWeekAvailability(recurringAvailability, planningStart, planningEnd);
-        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, fullAvailability);
-        List<ScheduledTaskBlock> allBlocks = convertGroupsToBlocks(scheduledGroups, weekStart);
-
-        List<ScheduledTaskBlock> blocks = new ArrayList<>();
-        for (ScheduledTaskBlock block : allBlocks) {
-            LocalDate blockDate = LocalDate.parse(block.getDate());
-            if (!blockDate.isBefore(weekStart) && !blockDate.isAfter(weekEnd)) {
-                blocks.add(block);
-            }
-        }
-
+        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, planningStart, weekEnd);
+        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, weekAvailability);
+        List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart);
         return new WeeklyScheduleResponse(weekStart.toString(), weekEnd.toString(), blocks);
     }
 
     // get starting date from local time
-    private LocalDate getPlanningStart() {
-        return LocalDate.now();
+    private LocalDate getPlanningStart(LocalDate requestedWeekStart) {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfCurrentWeek = today.minusDays(today.getDayOfWeek().getValue() % 7);
+
+        LocalDate baseStart = requestedWeekStart.isBefore(startOfCurrentWeek) ? startOfCurrentWeek : requestedWeekStart;
+        return baseStart.isBefore(today) ? today : baseStart;
     }
 
     // helper that builds the blocks needed
-    private List<AvailabilityBlock> buildWeekAvailability(List<AvailabilityBlock> recurringAvailability, LocalDate weekStart, LocalDate weekEnd) {
+    private List<AvailabilityBlock> buildWeekAvailability(List<AvailabilityBlock> recurringAvailability,
+                                                           LocalDate weekStart, LocalDate weekEnd) {
         List<AvailabilityBlock> result = new ArrayList<>();
 
         for (LocalDate date = weekStart; !date.isAfter(weekEnd); date = date.plusDays(1)) {
@@ -82,7 +84,13 @@ public class WeeklyScheduleService {
         return result;
     }
 
-    // converts task groups into blocks (storing the week of the task as well)
+    /**
+     * Converts task groups into display blocks for the frontend.
+     * Also recombines consecutive split sessions of the same task,
+     * then inserts 15-minute breaks after 1.5 hours of consecutive work.
+     *
+     * By AR
+     */
     private List<ScheduledTaskBlock> convertGroupsToBlocks(List<ScheduledTaskGroup> groups, LocalDate weekStart) {
         List<ScheduledTaskBlock> blocks = new ArrayList<>();
         long id = 1;
@@ -98,20 +106,151 @@ public class WeeklyScheduleService {
             LocalDate date = block.getDate();
             LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
-            for (Task task : group.getTasks()) {
-                long minutes = Math.round(task.getEstimatedTime() * 60);
-                LocalTime currentEnd = currentStart.plusMinutes(minutes);
+            // Step 1: Recombine consecutive split sessions of the same task
+            List<Task> recombined = recombineBlocks(group.getTasks());
 
-                blocks.add(new ScheduledTaskBlock(id++, task.getName(), date.toString(), toCalendarDayIndex(date), formatTime(currentStart), formatTime(currentEnd), getColorForPriority(task.getPriorityScore())));
+            // Step 2: Insert breaks after 1.5 hours of consecutive work
+            List<Object> withBreaks = insertBreaks(recombined);
 
-                currentStart = currentEnd;
+            // Step 3: Convert to ScheduledTaskBlock for frontend
+            for (Object item : withBreaks) {
+                if (item instanceof Task task) {
+                    long minutes = Math.round(task.getEstimatedTime() * 60);
+                    LocalTime currentEnd = currentStart.plusMinutes(minutes);
+
+                    blocks.add(new ScheduledTaskBlock(
+                            id++,
+                            task.getName(),
+                            date.toString(),
+                            toCalendarDayIndex(date),
+                            formatTime(currentStart),
+                            formatTime(currentEnd),
+                            getColorForPriority(task.getPriorityScore())
+                    ));
+
+                    currentStart = currentEnd;
+
+                } else if (item instanceof String && item.equals("BREAK")) {
+                    // Insert a 15-minute break block
+                    LocalTime breakEnd = currentStart.plusMinutes(15);
+
+                    blocks.add(new ScheduledTaskBlock(
+                            id++,
+                            "Break",
+                            date.toString(),
+                            toCalendarDayIndex(date),
+                            formatTime(currentStart),
+                            formatTime(breakEnd),
+                            "#D3D3D3"  // light gray for breaks
+                    ));
+
+                    currentStart = breakEnd;
+                }
             }
         }
 
         return blocks;
     }
 
-    // gets day of week from local time
+    /**
+     * Recombines consecutive split sessions of the same task into one larger block.
+     * Recomputes priority score on the merged task.
+     *
+     * Example: "Essay (Part 1/4)" + "Essay (Part 2/4)" → "Essay" with 1.0h
+     *
+     * by AR
+     */
+    private List<Task> recombineBlocks(List<Task> tasks) {
+        List<Task> result = new ArrayList<>();
+
+        int i = 0;
+        while (i < tasks.size()) {
+            Task current = tasks.get(i);
+            String baseName = getBaseName(current.getName());
+
+            double combinedTime = current.getEstimatedTime();
+            int j = i + 1;
+
+            // Look ahead for consecutive sessions of the same task
+            while (j < tasks.size()) {
+                Task next = tasks.get(j);
+                String nextBase = getBaseName(next.getName());
+
+                if (nextBase.equals(baseName)) {
+                    combinedTime += next.getEstimatedTime();
+                    j++;
+                } else {
+                    break;
+                }
+            }
+
+            if (j > i + 1) {
+                // Multiple consecutive sessions — merge them
+                Task merged = new Task(
+                        baseName,
+                        current.getTaskType(),
+                        combinedTime,
+                        current.getDueDate(),
+                        current.getGradeWeight(),
+                        current.getCurrentGrade()
+                );
+                // Recompute priority score for the merged block
+                priorityScoreService.applyPriorityScore(merged);
+                result.add(merged);
+            } else {
+                // Single session — keep as is but strip "(Part X/Y)" from name
+                Task cleaned = new Task(
+                        baseName,
+                        current.getTaskType(),
+                        current.getEstimatedTime(),
+                        current.getDueDate(),
+                        current.getGradeWeight(),
+                        current.getCurrentGrade()
+                );
+                priorityScoreService.applyPriorityScore(cleaned);
+                result.add(cleaned);
+            }
+
+            i = j;
+        }
+
+        return result;
+    }
+
+    /**
+     * Inserts a 15-minute break after every 1.5 hours of consecutive work.
+     * Returns a mixed list of Task and "BREAK" string markers.
+     *
+     * by AR
+     */
+    private List<Object> insertBreaks(List<Task> tasks) {
+        List<Object> result = new ArrayList<>();
+        double consecutiveHours = 0.0;
+
+        for (Task task : tasks) {
+            result.add(task);
+            consecutiveHours += task.getEstimatedTime();
+
+            if (consecutiveHours >= BREAK_TRIGGER_HOURS) {
+                result.add("BREAK");
+                consecutiveHours = 0.0;  // reset counter after break
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Strips the "(Part X/Y)" suffix from a split task name to get the original name.
+     */
+    private String getBaseName(String name) {
+        if (name != null && name.contains(" (Part ")) {
+            return name.substring(0, name.indexOf(" (Part "));
+        }
+        return name;
+    }
+
+    // gets day of week index from local date
     private int toCalendarDayIndex(LocalDate date) {
         return switch (date.getDayOfWeek()) {
             case SUNDAY -> 0;
@@ -123,50 +262,20 @@ public class WeeklyScheduleService {
             case SATURDAY -> 6;
         };
     }
-    // gets day of week given a string
-    private int mapDayOfWeek(String day) {
-        if (day == null) {
-            return 0;
-        }
-        return switch (day.trim().toUpperCase()) {
-            case "SUNDAY" -> 0;
-            case "MONDAY" -> 1;
-            case "TUESDAY" -> 2;
-            case "WEDNESDAY" -> 3;
-            case "THURSDAY" -> 4;
-            case "FRIDAY" -> 5;
-            case "SATURDAY" -> 6;
-            default -> 0;
-        };
-    }
-    // converts local time to string
+
+    // converts local time to HH:mm string
     private String formatTime(LocalTime time) {
         return String.format("%02d:%02d", time.getHour(), time.getMinute());
     }
-    // priority colors
+
+    // returns color based on priority score
     private String getColorForPriority(double priority) {
         if (priority >= 8) {
             return "#cf9b7d";
-        }
-        else if (priority >= 5) {
+        } else if (priority >= 5) {
             return "#89b86d";
-        }
-        else {
+        } else {
             return "#7da9cf";
         }
     }
-
-    private LocalDate getLatestDueDate(TaskDataStructure<Task> taskStore, LocalDate fallbackEnd) {
-        LocalDate latest = fallbackEnd;
-
-        for (int i = 0; i < taskStore.size(); i++) {
-            Task task = taskStore.get(i);
-            if (task.getDueDate() != null && task.getDueDate().isAfter(latest)) {
-                latest = task.getDueDate();
-            }
-        }
-
-        return latest;
-    }
-
 }

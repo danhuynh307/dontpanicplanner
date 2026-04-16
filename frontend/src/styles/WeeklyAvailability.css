@@ -58,15 +58,15 @@
   opacity: 0.45;
 }
 
-/* Card container */
+/* Card container — stretches to fill the viewport width */
 .availability-card {
-  max-width: 1280px;
-  width: 100%;
-  margin: 24px auto;
+  width: calc(100% - 32px);
+  max-width: 100%;
+  margin: 20px 16px;
   background: white;
   border: 1px solid #d9d9d9;
   border-radius: 14px;
-  padding: 28px 32px 32px;
+  padding: 24px 20px 28px;
   box-sizing: border-box;
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
@@ -140,25 +140,23 @@
   font-size: 0.92rem;
 }
 
-/* Quick-set row: one input + Set button per day column */
-.quick-set-row {
-  display: grid;
-  grid-template-columns: 80px repeat(7, 1fr);
-  column-gap: 3px;
-  align-items: center;
-  min-width: 900px;
-  margin-bottom: 8px;
-}
+/* quick-set label sits in the time-label column of the shared grid */
 .quick-set-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--gmu-green-dark);
   text-align: right;
-  padding-right: 10px;
+  padding-right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 28px;
 }
 .quick-set-cell {
   display: flex;
+  align-items: center;
   gap: 3px;
+  height: 28px;
 }
 .quick-set-input {
   flex: 1;
@@ -188,15 +186,14 @@
   background: var(--gmu-green-dark);
 }
 
-/* Grid */
+/* Grid — fills full card width, columns stretch equally */
 .availability-grid {
   display: grid;
-  grid-template-columns: 80px repeat(7, 1fr);
-  column-gap: 3px;
+  grid-template-columns: 60px repeat(7, 1fr);
+  column-gap: 4px;
   row-gap: 3px;
   align-items: center;
-  min-width: 900px;
-  overflow-x: auto;
+  width: 100%;
 }
 
 .grid-corner {
@@ -217,9 +214,9 @@
 /* Hour labels on the left */
 .time-label {
   text-align: right;
-  padding-right: 10px;
+  padding-right: 6px;
   color: #667085;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   height: 22px;
   display: flex;
   align-items: center;

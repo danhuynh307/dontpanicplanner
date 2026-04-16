@@ -5,7 +5,44 @@ const START_HOUR = 6;
 const END_HOUR = 21;
 const HOUR_HEIGHT = 64; // in pixels
 
+// distinct calendar-style colors, one per unique task
+const BLOCK_COLORS = [
+  "#8b5cf6", // purple
+  "#3b82f6", // blue
+  "#16a34a", // green
+  "#f97316", // orange
+  "#ec4899", // pink
+  "#0891b2", // cyan
+  "#d97706", // amber
+  "#ef4444", // red
+  "#7c3aed", // violet
+  "#0d9488", // teal
+];
+
+// builds a stable base-name → color map from all blocks on the page
+function buildColorMap(blocks) {
+  const seen = [];
+  blocks.forEach((block) => {
+    const base = block.taskTitle?.replace(/\s*\(Part \d+\/\d+\)$/, "") ?? "";
+    if (!seen.includes(base)) seen.push(base);
+  });
+  const map = {};
+  seen.forEach((base, i) => {
+    map[base] = BLOCK_COLORS[i % BLOCK_COLORS.length];
+  });
+  return map;
+}
+
 function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWeek }) {
+  // build color map once per render so all blocks on screen are consistent
+  const colorMap = buildColorMap(blocks);
+
+  // returns the palette color for a block, always keyed by base task name
+  const getTaskColor = (block) => {
+    const base = block.taskTitle?.replace(/\s*\(Part \d+\/\d+\)$/, "") ?? "";
+    return colorMap[base] ?? BLOCK_COLORS[0];
+  };
+
   const getWeekDates = () => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -47,7 +84,7 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
     return {
       top: `${top}px`,
       height: `${height}px`,
-      backgroundColor: block.color || "#8ab4f8",
+      backgroundColor: getTaskColor(block),
     };
   };
 
