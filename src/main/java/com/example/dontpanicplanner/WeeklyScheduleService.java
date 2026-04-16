@@ -17,10 +17,10 @@ public class WeeklyScheduleService {
     private final TaskRankSystem taskRankSystem;
     private final ScheduleGenerator scheduleGenerator;
 
-    // break is inserted after 1.5 hours of consecutive work
-    private static final double BREAK_TRIGGER_HOURS = 1.5;
-    // break length is 15 minutes
-    private static final double BREAK_DURATION_HOURS = 0.25;
+    // break is inserted after 2 hours of consecutive work
+    private static final double BREAK_TRIGGER_HOURS = 2.0;
+    // break length is 30 minutes
+    private static final double BREAK_DURATION_MINUTES = 30;
 
     public WeeklyScheduleService(TaskService taskService, AvailabilityService availabilityService,
                                   PriorityScoreService priorityScoreService, TaskRankSystem taskRankSystem,
@@ -86,8 +86,8 @@ public class WeeklyScheduleService {
 
     /**
      * Converts task groups into display blocks for the frontend.
-     * Also recombines consecutive split sessions of the same task,
-     * then inserts 15-minute breaks after 1.5 hours of consecutive work.
+     * Inserts 30-minute breaks after 2 hours of consecutive work FIRST,
+     * then recombines consecutive split sessions of the same task.
      *
      * By AR
      */
@@ -106,14 +106,14 @@ public class WeeklyScheduleService {
             LocalDate date = block.getDate();
             LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
-            // Step 1: Recombine consecutive split sessions of the same task
-            List<Task> recombined = recombineBlocks(group.getTasks());
+            // Step 1: Insert breaks FIRST (before recombining)
+            List<Object> withBreaks = insertBreaks(group.getTasks());
 
-            // Step 2: Insert breaks after 1.5 hours of consecutive work
-            List<Object> withBreaks = insertBreaks(recombined);
+            // Step 2: Recombine consecutive split sessions of the same task
+            List<Object> finalItems = recombineBlocks(withBreaks);
 
             // Step 3: Convert to ScheduledTaskBlock for frontend
-            for (Object item : withBreaks) {
+            for (Object item : finalItems) {
                 if (item instanceof Task task) {
                     long minutes = Math.round(task.getEstimatedTime() * 60);
                     LocalTime currentEnd = currentStart.plusMinutes(minutes);
@@ -131,8 +131,8 @@ public class WeeklyScheduleService {
                     currentStart = currentEnd;
 
                 } else if (item instanceof String && item.equals("BREAK")) {
-                    // Insert a 15-minute break block
-                    LocalTime breakEnd = currentStart.plusMinutes(15);
+                    // Insert a 30-minute break block
+                    LocalTime breakEnd = currentStart.plusMinutes((long) BREAK_DURATION_MINUTES);
 
                     blocks.add(new ScheduledTaskBlock(
                             id++,
@@ -154,26 +154,35 @@ public class WeeklyScheduleService {
 
     /**
      * Recombines consecutive split sessions of the same task into one larger block.
+     * Works on a mixed list of Task and "BREAK" markers.
      * Recomputes priority score on the merged task.
      *
      * Example: "Essay (Part 1/4)" + "Essay (Part 2/4)" → "Essay" with 1.0h
      *
      * by AR
      */
-    private List<Task> recombineBlocks(List<Task> tasks) {
-        List<Task> result = new ArrayList<>();
+    private List<Object> recombineBlocks(List<Object> items) {
+        List<Object> result = new ArrayList<>();
 
         int i = 0;
-        while (i < tasks.size()) {
-            Task current = tasks.get(i);
-            String baseName = getBaseName(current.getName());
+        while (i < items.size()) {
+            Object current = items.get(i);
 
-            double combinedTime = current.getEstimatedTime();
+            // Keep breaks as-is
+            if (current instanceof String) {
+                result.add(current);
+                i++;
+                continue;
+            }
+
+            Task currentTask = (Task) current;
+            String baseName = getBaseName(currentTask.getName());
+            double combinedTime = currentTask.getEstimatedTime();
             int j = i + 1;
 
-            // Look ahead for consecutive sessions of the same task
-            while (j < tasks.size()) {
-                Task next = tasks.get(j);
+            // Look ahead for consecutive sessions of the same task (stop at breaks)
+            while (j < items.size() && items.get(j) instanceof Task) {
+                Task next = (Task) items.get(j);
                 String nextBase = getBaseName(next.getName());
 
                 if (nextBase.equals(baseName)) {
@@ -188,11 +197,11 @@ public class WeeklyScheduleService {
                 // Multiple consecutive sessions — merge them
                 Task merged = new Task(
                         baseName,
-                        current.getTaskType(),
+                        currentTask.getTaskType(),
                         combinedTime,
-                        current.getDueDate(),
-                        current.getGradeWeight(),
-                        current.getCurrentGrade()
+                        currentTask.getDueDate(),
+                        currentTask.getGradeWeight(),
+                        currentTask.getCurrentGrade()
                 );
                 // Recompute priority score for the merged block
                 priorityScoreService.applyPriorityScore(merged);
@@ -201,11 +210,11 @@ public class WeeklyScheduleService {
                 // Single session — keep as is but strip "(Part X/Y)" from name
                 Task cleaned = new Task(
                         baseName,
-                        current.getTaskType(),
-                        current.getEstimatedTime(),
-                        current.getDueDate(),
-                        current.getGradeWeight(),
-                        current.getCurrentGrade()
+                        currentTask.getTaskType(),
+                        currentTask.getEstimatedTime(),
+                        currentTask.getDueDate(),
+                        currentTask.getGradeWeight(),
+                        currentTask.getCurrentGrade()
                 );
                 priorityScoreService.applyPriorityScore(cleaned);
                 result.add(cleaned);
@@ -218,7 +227,8 @@ public class WeeklyScheduleService {
     }
 
     /**
-     * Inserts a 15-minute break after every 1.5 hours of consecutive work.
+     * Inserts a 30-minute break after every 2 hours of consecutive work.
+     * Only adds a break if there are more tasks after it that day.
      * Returns a mixed list of Task and "BREAK" string markers.
      *
      * by AR
@@ -227,11 +237,13 @@ public class WeeklyScheduleService {
         List<Object> result = new ArrayList<>();
         double consecutiveHours = 0.0;
 
-        for (Task task : tasks) {
+        for (int i = 0; i < tasks.size(); i++) {
+            Task task = tasks.get(i);
             result.add(task);
             consecutiveHours += task.getEstimatedTime();
 
-            if (consecutiveHours > BREAK_TRIGGER_HOURS) {
+            // Only add break if threshold hit AND more tasks follow
+            if (consecutiveHours >= BREAK_TRIGGER_HOURS && i < tasks.size() - 1) {
                 result.add("BREAK");
                 consecutiveHours = 0.0;  // reset counter after break
             }
