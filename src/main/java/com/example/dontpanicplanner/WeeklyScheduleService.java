@@ -86,8 +86,8 @@ public class WeeklyScheduleService {
 
     /**
      * Converts task groups into display blocks for the frontend.
-     * Inserts 30-minute breaks after 2 hours of consecutive work FIRST,
-     * then recombines consecutive split sessions of the same task.
+     * Order: recombineBlocks FIRST, then insertBreaks.
+     * This ensures split sessions are merged before breaks are placed.
      *
      * By AR
      */
@@ -106,11 +106,11 @@ public class WeeklyScheduleService {
             LocalDate date = block.getDate();
             LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
-            // Step 1: Insert breaks FIRST (before recombining)
-            List<Object> withBreaks = insertBreaks(group.getTasks());
+            // Step 1: Recombine consecutive split sessions FIRST
+            List<Task> recombined = recombineBlocks(group.getTasks());
 
-            // Step 2: Recombine consecutive split sessions of the same task
-            List<Object> finalItems = recombineBlocks(withBreaks);
+            // Step 2: Insert breaks AFTER recombining
+            List<Object> finalItems = insertBreaks(recombined);
 
             // Step 3: Convert to ScheduledTaskBlock for frontend
             for (Object item : finalItems) {
@@ -154,35 +154,25 @@ public class WeeklyScheduleService {
 
     /**
      * Recombines consecutive split sessions of the same task into one larger block.
-     * Works on a mixed list of Task and "BREAK" markers.
      * Recomputes priority score on the merged task.
      *
      * Example: "Essay (Part 1/4)" + "Essay (Part 2/4)" → "Essay" with 1.0h
      *
      * by AR
      */
-    private List<Object> recombineBlocks(List<Object> items) {
-        List<Object> result = new ArrayList<>();
+    private List<Task> recombineBlocks(List<Task> tasks) {
+        List<Task> result = new ArrayList<>();
 
         int i = 0;
-        while (i < items.size()) {
-            Object current = items.get(i);
-
-            // Keep breaks as-is
-            if (current instanceof String) {
-                result.add(current);
-                i++;
-                continue;
-            }
-
-            Task currentTask = (Task) current;
-            String baseName = getBaseName(currentTask.getName());
-            double combinedTime = currentTask.getEstimatedTime();
+        while (i < tasks.size()) {
+            Task current = tasks.get(i);
+            String baseName = getBaseName(current.getName());
+            double combinedTime = current.getEstimatedTime();
             int j = i + 1;
 
-            // Look ahead for consecutive sessions of the same task (stop at breaks)
-            while (j < items.size() && items.get(j) instanceof Task) {
-                Task next = (Task) items.get(j);
+            // Look ahead for consecutive sessions of the same task
+            while (j < tasks.size()) {
+                Task next = tasks.get(j);
                 String nextBase = getBaseName(next.getName());
 
                 if (nextBase.equals(baseName)) {
@@ -197,11 +187,11 @@ public class WeeklyScheduleService {
                 // Multiple consecutive sessions — merge them
                 Task merged = new Task(
                         baseName,
-                        currentTask.getTaskType(),
+                        current.getTaskType(),
                         combinedTime,
-                        currentTask.getDueDate(),
-                        currentTask.getGradeWeight(),
-                        currentTask.getCurrentGrade()
+                        current.getDueDate(),
+                        current.getGradeWeight(),
+                        current.getCurrentGrade()
                 );
                 // Recompute priority score for the merged block
                 priorityScoreService.applyPriorityScore(merged);
@@ -210,11 +200,11 @@ public class WeeklyScheduleService {
                 // Single session — keep as is but strip "(Part X/Y)" from name
                 Task cleaned = new Task(
                         baseName,
-                        currentTask.getTaskType(),
-                        currentTask.getEstimatedTime(),
-                        currentTask.getDueDate(),
-                        currentTask.getGradeWeight(),
-                        currentTask.getCurrentGrade()
+                        current.getTaskType(),
+                        current.getEstimatedTime(),
+                        current.getDueDate(),
+                        current.getGradeWeight(),
+                        current.getCurrentGrade()
                 );
                 priorityScoreService.applyPriorityScore(cleaned);
                 result.add(cleaned);
