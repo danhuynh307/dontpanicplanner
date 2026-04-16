@@ -5,9 +5,10 @@ function CalendarView({ selectedDate, setSelectedDate, tasks }) {
 
   const getCalendarStart = (date) => {
     const d = new Date(date);
-    d.setDate(d.getDate() - 7);
     d.setHours(0, 0, 0, 0);
-    return d;
+    const start = new Date(d);
+    start.setDate(d.getDate() - d.getDay());
+    return start;
   };
 
   const [calendarStart, setCalendarStart] = useState(getCalendarStart(today));
