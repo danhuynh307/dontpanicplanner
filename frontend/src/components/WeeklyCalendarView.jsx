@@ -3,7 +3,7 @@ import React from "react";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const START_HOUR = 6;
 const END_HOUR = 21;
-const HOUR_HEIGHT = 64; // px per hour
+const HOUR_HEIGHT = 64; // in pixels
 
 function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWeek }) {
   const getWeekDates = () => {
@@ -87,7 +87,7 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
     return `${year}-${month}-${day}`;
     };
 
-  // Semester label (approximate based on current month)
+  // semester label (approximate based on current month)
   const getSemesterLabel = () => {
     const month = weekStartDate.getMonth() + 1;
     const year = weekStartDate.getFullYear();
@@ -153,7 +153,6 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
                         <span className="weekly-task-block-title">
                           {block.taskTitle}
                         </span>
-                        {/* score badge: color-coded by urgency */}
                         <span
                           className="weekly-task-block-score"
                           style={{ background: getScoreColor(getBlockPriorityScore(block)) }}

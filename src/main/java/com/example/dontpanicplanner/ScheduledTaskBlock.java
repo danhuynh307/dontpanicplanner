@@ -5,8 +5,8 @@ public class ScheduledTaskBlock {
     private String taskTitle;
     private String date;      // YYYY-MM-DD
     private int dayOfWeek;    // 0 = Sunday, 6 = Saturday
-    private String startTime; // HH:mm
-    private String endTime;   // HH:mm
+    private String startTime; // hh:mm
+    private String endTime;   // hh:mm
     private String color;
 
     public ScheduledTaskBlock() {}

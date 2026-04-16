@@ -16,7 +16,8 @@ public class AvailabilityService {
     public List<AvailabilityBlock> saveAvailability(List<AvailabilityBlock> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             availabilityBlocks = createDefaultAvailability();
-        } else {
+        }
+        else {
             availabilityBlocks = new ArrayList<>(blocks);
         }
         return availabilityBlocks;

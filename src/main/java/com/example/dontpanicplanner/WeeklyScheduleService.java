@@ -28,7 +28,7 @@ public class WeeklyScheduleService {
     // generates weekly schedule using schedule generator. sets the week so that tasks do not persist over the next week.
     public WeeklyScheduleResponse generateWeeklySchedule(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
-        LocalDate planningStart = getPlanningStart(weekStart);
+        LocalDate planningStart = getPlanningStart();
 
         TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
         for (Task task : taskService.getAllTasks()) {
@@ -36,19 +36,25 @@ public class WeeklyScheduleService {
         }
 
         List<AvailabilityBlock> recurringAvailability = availabilityService.getAvailability();
-        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, planningStart, weekEnd);
-        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, weekAvailability);
-        List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart);
+        LocalDate planningEnd = getLatestDueDate(taskStore, weekEnd);
+        List<AvailabilityBlock> fullAvailability = buildWeekAvailability(recurringAvailability, planningStart, planningEnd);
+        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, fullAvailability);
+        List<ScheduledTaskBlock> allBlocks = convertGroupsToBlocks(scheduledGroups, weekStart);
+
+        List<ScheduledTaskBlock> blocks = new ArrayList<>();
+        for (ScheduledTaskBlock block : allBlocks) {
+            LocalDate blockDate = LocalDate.parse(block.getDate());
+            if (!blockDate.isBefore(weekStart) && !blockDate.isAfter(weekEnd)) {
+                blocks.add(block);
+            }
+        }
+
         return new WeeklyScheduleResponse(weekStart.toString(), weekEnd.toString(), blocks);
     }
 
     // get starting date from local time
-    private LocalDate getPlanningStart(LocalDate requestedWeekStart) {
-        LocalDate today = LocalDate.now();
-        LocalDate startOfCurrentWeek = today.minusDays(today.getDayOfWeek().getValue() % 7);
-
-        LocalDate baseStart = requestedWeekStart.isBefore(startOfCurrentWeek) ? startOfCurrentWeek : requestedWeekStart;
-        return baseStart.isBefore(today) ? today : baseStart;
+    private LocalDate getPlanningStart() {
+        return LocalDate.now();
     }
 
     // helper that builds the blocks needed
@@ -149,4 +155,18 @@ public class WeeklyScheduleService {
             return "#7da9cf";
         }
     }
+
+    private LocalDate getLatestDueDate(TaskDataStructure<Task> taskStore, LocalDate fallbackEnd) {
+        LocalDate latest = fallbackEnd;
+
+        for (int i = 0; i < taskStore.size(); i++) {
+            Task task = taskStore.get(i);
+            if (task.getDueDate() != null && task.getDueDate().isAfter(latest)) {
+                latest = task.getDueDate();
+            }
+        }
+
+        return latest;
+    }
+
 }

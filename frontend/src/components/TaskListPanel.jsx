@@ -2,12 +2,7 @@ import React from "react";
 import "../styles/app.css";
 import { getTasks, deleteTask } from "../services/taskService";
 
-function TaskListPanel({
-  tasks,
-  showAllTasks,
-  onToggleShowAll,
-  onDeleteTask,
-}) {
+function TaskListPanel({tasks, showAllTasks, onToggleShowAll, onDeleteTask,}) {
   return (
     <div className="task-list-panel">
       <div className="task-list-header">

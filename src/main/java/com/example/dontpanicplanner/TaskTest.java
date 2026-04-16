@@ -6,35 +6,33 @@ import java.util.List;
 
 public class TaskTest {
     public static void main(String[] args) {
-        // 1. ENGINE SETUP
+        // setup
         PriorityScoreService scoreService = new PriorityScoreService();
         TaskRankSystem rankSystem = new TaskRankSystem(scoreService);
         ScheduleGenerator generator = new ScheduleGenerator(rankSystem, scoreService);
 
-        // 2. AVAILABILITY: 6 Days (Monday through Saturday)
-        // Each day has plenty of room (5 hours), so the 'target' will be the limiting factor.
+        // availability
         List<AvailabilityBlock> availability = new ArrayList<>();
         String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         for (String day : days) {
             availability.add(new AvailabilityBlock(day, "09:00", "14:00"));
         }
 
-        // 3. TASKS: Two 6-hour tasks (12 hours total)
-        // 12 hours / 6 days = 2.0 hours per day target.
+        //tasks
         TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
 
-        // Task A: Due Thursday (4 days from Monday)
+        // due Thursday (4 days)
         taskStore.add(new Task("CS Project", "Project", 6.0,
                 LocalDate.now().plusDays(3), 30, 85.0));
 
-        // Task B: Due Saturday (6 days from Monday)
+        // due Saturday (6 days)
         taskStore.add(new Task("Math Assignment", "HW", 6.0,
                 LocalDate.now().plusDays(5), 20, 90.0));
 
-        // 4. GENERATE
+        // generate
         List<ScheduledTaskGroup> schedule = generator.generateSchedule(taskStore, availability);
 
-        // 5. OUTPUT RESULTS
+        // output
         System.out.println("=== LOAD-BALANCED SCHEDULING TEST ===");
         System.out.println("Goal: 12h Work / 6 Days = 2.0h per day\n");
 
