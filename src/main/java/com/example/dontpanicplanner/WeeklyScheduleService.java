@@ -141,7 +141,7 @@ public class WeeklyScheduleService {
                             toCalendarDayIndex(date),
                             formatTime(currentStart),
                             formatTime(breakEnd),
-                            "#D3D3D3"  // light gray for breaks
+                            "#A8D5A2"  // lightGreenColor for breaks
                     ));
 
                     currentStart = breakEnd;
@@ -231,7 +231,7 @@ public class WeeklyScheduleService {
             result.add(task);
             consecutiveHours += task.getEstimatedTime();
 
-            if (consecutiveHours >= BREAK_TRIGGER_HOURS) {
+            if (consecutiveHours > BREAK_TRIGGER_HOURS) {
                 result.add("BREAK");
                 consecutiveHours = 0.0;  // reset counter after break
             }
