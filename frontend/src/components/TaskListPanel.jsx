@@ -24,7 +24,7 @@ function TaskListPanel({tasks, showAllTasks, onToggleShowAll, onDeleteTask,}) {
             :                "priority-badge priority-low";
 
           return (
-            <div key={i} className="task-card">
+            <div key={task.id} className="task-card">
               <div className="task-card-header">
                 <div>
                   <h4>{task.name}</h4>

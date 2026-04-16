@@ -44,6 +44,11 @@ function CreateTaskPanel({ addTask, selectedDate, untitledCount, setUntitledCoun
       return;
     }
 
+    if (Number(formData.estimatedTime) % 0.5 !== 0) {
+        alert("Estimated time must be in 0.5 hour increments (0.5, 1, 1.5...).");
+        return;
+    }
+
     if (formData.dueDate && formData.dueDate < today) {
       alert("Due date cannot be in the past.");
       return;
@@ -115,6 +120,7 @@ function CreateTaskPanel({ addTask, selectedDate, untitledCount, setUntitledCoun
             value={formData.estimatedTime}
             onChange={handleChange}
             min="0"
+            step="0.5"
           />
 
           <label>Due Date</label>
