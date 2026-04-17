@@ -216,31 +216,69 @@ public class WeeklyScheduleService {
         return result;
     }
 
-    /**
-     * Inserts a 30-minute break after every 2 hours of consecutive work.
-     * Only adds a break if there are more tasks after it that day.
-     * Returns a mixed list of Task and "BREAK" string markers.
-     *
-     * by AR
-     */
-    private List<Object> insertBreaks(List<Task> tasks) {
-        List<Object> result = new ArrayList<>();
-        double consecutiveHours = 0.0;
+/**
+ * Inserts a 30-minute break after every 2 hours of consecutive work.
+ * Also splits large single tasks that exceed 2 hours with breaks in between.
+ * Only adds a break if there are more tasks after it that day.
+ * Returns a mixed list of Task and "BREAK" string markers.
+ *
+ * by AR
+ */
+private List<Object> insertBreaks(List<Task> tasks) {
+    List<Object> result = new ArrayList<>();
+    double consecutiveHours = 0.0;
 
-        for (int i = 0; i < tasks.size(); i++) {
-            Task task = tasks.get(i);
-            result.add(task);
-            consecutiveHours += task.getEstimatedTime();
+    for (int i = 0; i < tasks.size(); i++) {
+        Task task = tasks.get(i);
+        double remaining = task.getEstimatedTime();
+        boolean hasMoreTasksAfter = i < tasks.size() - 1;
 
-            // Only add break if threshold hit AND more tasks follow
-            if (consecutiveHours >= BREAK_TRIGGER_HOURS && i < tasks.size() - 1) {
+        // If this single task exceeds the trigger, split it with breaks inside
+        while (remaining > BREAK_TRIGGER_HOURS) {
+            // Add a 2-hour chunk of this task
+            Task chunk = new Task(
+                    task.getName(),
+                    task.getTaskType(),
+                    BREAK_TRIGGER_HOURS,
+                    task.getDueDate(),
+                    task.getGradeWeight(),
+                    task.getCurrentGrade()
+            );
+            priorityScoreService.applyPriorityScore(chunk);
+            result.add(chunk);
+            remaining -= BREAK_TRIGGER_HOURS;
+
+            // Add break after the chunk if there's still work left
+            if (remaining > 0 || hasMoreTasksAfter) {
                 result.add("BREAK");
-                consecutiveHours = 0.0;  // reset counter after break
             }
+            consecutiveHours = 0.0;
         }
 
-        return result;
+        // Add the remaining portion of the task
+        if (remaining > 0) {
+            Task remainder = new Task(
+                    task.getName(),
+                    task.getTaskType(),
+                    remaining,
+                    task.getDueDate(),
+                    task.getGradeWeight(),
+                    task.getCurrentGrade()
+            );
+            priorityScoreService.applyPriorityScore(remainder);
+            result.add(remainder);
+            consecutiveHours += remaining;
+        }
+
+        // Check if consecutive hours across tasks triggers a break
+        if (consecutiveHours >= BREAK_TRIGGER_HOURS && hasMoreTasksAfter) {
+            result.add("BREAK");
+            consecutiveHours = 0.0;
+        }
     }
+
+    return result;
+}
 
     /**
      * Strips the "(Part X/Y)" suffix from a split task name to get the original name.
