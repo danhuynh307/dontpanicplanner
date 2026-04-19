@@ -52,8 +52,8 @@ export async function createTask(task) {
   return response.json();
 }
 
-export async function updateTask(index, task) {
-  const response = await fetch(`${API_BASE}/${index}`, {
+export async function updateTask(id, task) {
+  const response = await fetch(`${API_BASE}/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -67,8 +67,8 @@ export async function updateTask(index, task) {
   return response.json();
 }
 
-export async function deleteTask(index) {
-  const response = await fetch(`${API_BASE}/${index}`, {
+export async function deleteTask(id) {
+  const response = await fetch(`${API_BASE}/${id}`, {
     method: "DELETE",
   });
 
