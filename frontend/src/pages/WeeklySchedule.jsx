@@ -63,9 +63,9 @@ function WeeklySchedule() {
     setWeekStartDate(newDate);
   };
 
-  const handleRemoveTask = async (taskIndex) => {
+  const handleRemoveTask = async (taskId) => {
     try {
-      await deleteTask(taskIndex);
+      await deleteTask(taskId);
       await loadPageData();
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -76,14 +76,14 @@ function WeeklySchedule() {
     try {
       const originalTaskName = block.taskTitle.replace(/\s*\(Part \d+\/\d+\)$/, "");
 
-      const taskIndex = tasks.findIndex((task) => task.name === originalTaskName);
+      const matchingTask = tasks.find((task) => task.name === originalTaskName);
 
-      if (taskIndex === -1) {
+      if (!matchingTask) {
         console.error("Could not find matching task for block:", block);
         return;
       }
 
-      await deleteTask(taskIndex);
+      await deleteTask(matchingTask.id);
       await loadPageData();
     } catch (error) {
       console.error("Failed to delete task from calendar:", error);
@@ -91,9 +91,9 @@ function WeeklySchedule() {
   };
 
   // saves edited task fields to the backend then reloads
-  const handleUpdateTask = async (taskIndex, updatedData) => {
+  const handleUpdateTask = async (taskId, updatedData) => {
     try {
-      await updateTask(taskIndex, updatedData);
+      await updateTask(taskId, updatedData);
       await loadPageData();
     } catch (error) {
       console.error("Failed to update task:", error);

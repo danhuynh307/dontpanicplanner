@@ -9,12 +9,12 @@ function priorityBadgeClass(score) {
 }
 
 function WeeklyTaskList({ tasks, onRemoveTask, onUpdateTask }) {
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const [editData, setEditData] = useState({});
 
   // opens the inline edit form pre-filled with the task's current values
-  const startEdit = (index, task) => {
-    setEditingIndex(index);
+  const startEdit = (task) => {
+    setEditingTaskId(task.id);
     setEditData({
       name:          task.name          ?? "",
       taskType:      task.taskType      ?? "Assignment",
@@ -31,11 +31,11 @@ function WeeklyTaskList({ tasks, onRemoveTask, onUpdateTask }) {
 
   // submits the edited values and closes the form
   const handleSave = () => {
-    if (onUpdateTask) onUpdateTask(editingIndex, editData);
-    setEditingIndex(null);
+    if (onUpdateTask) onUpdateTask(editingTaskId, editData);
+        setEditingTaskId(null);
   };
 
-  const handleCancel = () => setEditingIndex(null);
+  const handleCancel = () => setEditingTaskId(null);
 
   return (
     <div className="weekly-task-list-panel">
@@ -56,8 +56,8 @@ function WeeklyTaskList({ tasks, onRemoveTask, onUpdateTask }) {
                 </span>
               </div>
 
-              {/* inline edit form — only shown for the card being edited */}
-              {editingIndex === index ? (
+              {/* inline edit form only shown for the card being edited */}
+              {editingTaskId === task.id ? (
                 <div className="task-edit-form">
                   <label>Name</label>
                   <input name="name" value={editData.name} onChange={handleEditChange} />
@@ -98,10 +98,10 @@ function WeeklyTaskList({ tasks, onRemoveTask, onUpdateTask }) {
                   </div>
 
                   <div className="weekly-task-actions">
-                    <button className="task-btn task-btn-update" onClick={() => startEdit(index, task)}>
+                    <button className="task-btn task-btn-update" onClick={() => startEdit(task)}>
                       Update Task
                     </button>
-                    <button className="task-btn task-btn-remove" onClick={() => onRemoveTask && onRemoveTask(index)}>
+                    <button className="task-btn task-btn-remove" onClick={() => onRemoveTask && onRemoveTask(task.id)}>
                       Remove
                     </button>
                   </div>
