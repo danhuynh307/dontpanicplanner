@@ -97,11 +97,15 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
   };
 
   const getBlockPriorityScore = (block) => {
+    const baseTitle = block.taskTitle.replace(/\s*\(Part \d+\/\d+\)$/, "");
+    if (baseTitle.trim().toLowerCase() === "break") {
+      return null;
+    }
     if (block.priorityScore != null) return block.priorityScore;
     if (block.priority_score != null) return block.priority_score;
     if (block.score != null) return block.score;
 
-    const baseTitle = block.taskTitle.replace(/\s*\(Part \d+\/\d+\)$/, "");
+
 
     const matchedTask =
       tasks?.find((task) => task.id != null && block.taskId != null && task.id === block.taskId) ||
@@ -190,12 +194,19 @@ function WeeklyCalendarView({ weekStartDate, blocks, tasks, onPrevWeek, onNextWe
                         <span className="weekly-task-block-title">
                           {block.taskTitle}
                         </span>
-                        <span
-                          className="weekly-task-block-score"
-                          style={{ background: getScoreColor(getBlockPriorityScore(block)) }}
-                        >
-                          {getBlockPriorityScore(block) != null ? Math.round(getBlockPriorityScore(block)) : "–"}
-                        </span>
+                        {(() => {
+                          const score = getBlockPriorityScore(block);
+                          if (score == null) return null;
+
+                          return (
+                            <span
+                              className="weekly-task-block-score"
+                              style={{ background: getScoreColor(score) }}
+                            >
+                              {Math.round(score)}
+                            </span>
+                          );
+                        })()}
                       </div>
 
                       {(timeToMinutes(block.endTime) - timeToMinutes(block.startTime)) >= 45 && (
