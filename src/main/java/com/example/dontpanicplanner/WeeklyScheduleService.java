@@ -35,27 +35,42 @@ public class WeeklyScheduleService {
     // generates weekly schedule using schedule generator
     public WeeklyScheduleResponse generateWeeklySchedule(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
-        LocalDate planningStart = getPlanningStart(weekStart);
+
+        List<Task> allTasks = taskService.getAllTasks();
 
         TaskDataStructure<Task> taskStore = new TaskDataStructure<>();
-        for (Task task : taskService.getAllTasks()) {
+        for (Task task : allTasks) {
             taskStore.add(task);
         }
 
+        // always plan from today so every call produces the same placement —
+        // tasks fill the earliest available slots and later weeks only show
+        // whatever the scheduler couldn't fit in earlier weeks
+        LocalDate planningStart = LocalDate.now();
+        LocalDate furthestDue   = getFurthestDueDate(allTasks);
+        LocalDate planningEnd   = furthestDue != null ? furthestDue : weekEnd;
+
         List<AvailabilityBlock> recurringAvailability = availabilityService.getAvailability();
-        List<AvailabilityBlock> weekAvailability = buildWeekAvailability(recurringAvailability, planningStart, weekEnd);
-        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, weekAvailability);
-        List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart);
+        List<AvailabilityBlock> fullAvailability = buildWeekAvailability(recurringAvailability, planningStart, planningEnd);
+
+        List<ScheduledTaskGroup> scheduledGroups = scheduleGenerator.generateSchedule(taskStore, fullAvailability);
+
+        // filter to blocks that fall inside the requested week only
+        List<ScheduledTaskBlock> blocks = convertGroupsToBlocks(scheduledGroups, weekStart, weekEnd);
         return new WeeklyScheduleResponse(weekStart.toString(), weekEnd.toString(), blocks);
     }
 
-    // get starting date from local time
-    private LocalDate getPlanningStart(LocalDate requestedWeekStart) {
-        LocalDate today = LocalDate.now();
-        LocalDate startOfCurrentWeek = today.minusDays(today.getDayOfWeek().getValue() % 7);
-
-        LocalDate baseStart = requestedWeekStart.isBefore(startOfCurrentWeek) ? startOfCurrentWeek : requestedWeekStart;
-        return baseStart.isBefore(today) ? today : baseStart;
+    // returns the latest due date across all tasks, or null if there are none
+    private LocalDate getFurthestDueDate(List<Task> tasks) {
+        LocalDate furthest = null;
+        for (Task task : tasks) {
+            if (task.getDueDate() != null) {
+                if (furthest == null || task.getDueDate().isAfter(furthest)) {
+                    furthest = task.getDueDate();
+                }
+            }
+        }
+        return furthest;
     }
 
     // helper that builds the blocks needed
@@ -86,12 +101,13 @@ public class WeeklyScheduleService {
 
     /**
      * Converts task groups into display blocks for the frontend.
+     * Only includes groups whose date falls within weekStart–weekEnd.
      * Order: recombineBlocks FIRST, then insertBreaks.
      * This ensures split sessions are merged before breaks are placed.
      *
      * By AR
      */
-    private List<ScheduledTaskBlock> convertGroupsToBlocks(List<ScheduledTaskGroup> groups, LocalDate weekStart) {
+    private List<ScheduledTaskBlock> convertGroupsToBlocks(List<ScheduledTaskGroup> groups, LocalDate weekStart, LocalDate weekEnd) {
         List<ScheduledTaskBlock> blocks = new ArrayList<>();
         long id = 1;
 
@@ -104,6 +120,12 @@ public class WeeklyScheduleService {
 
             AvailabilityBlock block = group.getAvailabilityBlocks().get(0);
             LocalDate date = block.getDate();
+
+            // skip any group that falls outside the week being viewed
+            if (date.isBefore(weekStart) || date.isAfter(weekEnd)) {
+                continue;
+            }
+
             LocalTime currentStart = LocalTime.parse(block.getStartTime());
 
             // Step 1: Recombine consecutive split sessions FIRST
