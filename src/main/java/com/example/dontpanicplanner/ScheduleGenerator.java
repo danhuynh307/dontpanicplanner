@@ -33,15 +33,22 @@ public class ScheduleGenerator {
         double targetPerDay = (numDays > 0) ? totalWorkHours / numDays : 0;
         double effectiveTargetPerDay = Math.max(targetPerDay, 0.5);
 
-        Map<String, List<Task>> sessionsByTask = new LinkedHashMap<>();
-        Map<String, Task> originalTask = new HashMap<>(); // need to read due date
+        Map<Long, List<Task>> sessionsByTask = new LinkedHashMap<>();
+        Map<Long, Task> originalTask = new HashMap<>(); // need to read due date
 
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
-            originalTask.put(t.getName(), t);
-
+            Long taskId = t.getId();
+            if (taskId == null) {
+                continue;
+            }
+            originalTask.put(taskId, t);
             List<Task> splitSessions = TaskSplitter.splitInto30MinSessions(t, priorityScoreService);
-            sessionsByTask.put(t.getName(), new ArrayList<>(splitSessions));
+            for (Task session : splitSessions) {
+                session.setId(taskId);
+            }
+
+            sessionsByTask.put(taskId, new ArrayList<>(splitSessions));
         }
 
 
@@ -71,9 +78,9 @@ public class ScheduleGenerator {
             LocalDate blockDate = block.getDate();
             double currentDayWork = scheduledHoursByDay.getOrDefault(blockDate, 0.0);
 
-            for (String taskName : sessionsByTask.keySet()) {
-                List<Task> sessions = sessionsByTask.get(taskName);
-                Task origTask = originalTask.get(taskName);
+            for (Long taskId : sessionsByTask.keySet()) {
+                List<Task> sessions = sessionsByTask.get(taskId);
+                Task origTask = originalTask.get(taskId);
                 LocalDate dueDate = origTask.getDueDate();
 
                 if (blockDate.isAfter(dueDate)) {
@@ -116,9 +123,9 @@ public class ScheduleGenerator {
             LocalDate blockDate = block.getDate();
             double currentDayWork = scheduledHoursByDay.getOrDefault(blockDate, 0.0);
 
-            for (String taskName : sessionsByTask.keySet()) {
-                List<Task> sessions = sessionsByTask.get(taskName);
-                Task origTask = originalTask.get(taskName);
+            for (Long taskId : sessionsByTask.keySet()) {
+                List<Task> sessions = sessionsByTask.get(taskId);
+                Task origTask = originalTask.get(taskId);
                 LocalDate dueDate = origTask.getDueDate();
 
                 if (blockDate.isAfter(dueDate)) {
@@ -162,16 +169,16 @@ public List<Task> getUnscheduledTasks(
         List<ScheduledTaskGroup> scheduledGroups)
 {
     // Collect the names of all tasks that made it into the schedule
-    Map<String, Double> scheduledHoursByTask = new HashMap<>();
+    Map<Long, Double> scheduledHoursByTask = new HashMap<>();
 
     for (ScheduledTaskGroup group : scheduledGroups) {
         for (Task scheduledTask : group.getTasks()) {
             // Strip the "(Part X/Y)" suffix to get the original task name
-            String name = scheduledTask.getName();
-            if (name.contains(" (Part ")) {
-                name = name.substring(0, name.indexOf(" (Part "));
+            Long taskId = scheduledTask.getId();
+            if (taskId == null) {
+                continue;
             }
-            scheduledHoursByTask.put(name, scheduledHoursByTask.getOrDefault(name, 0.0) + scheduledTask.getEstimatedTime());
+            scheduledHoursByTask.put(taskId, scheduledHoursByTask.getOrDefault(taskId, 0.0) + scheduledTask.getEstimatedTime());
         }
     }
 
