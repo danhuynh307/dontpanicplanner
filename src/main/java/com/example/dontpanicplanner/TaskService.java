@@ -72,17 +72,19 @@ public class TaskService {
         return task;
     }
 
-    public Task updateTask(int index, Task updatedTask) {
-        if (index < 0 || index >= taskStore.size()) {
-            return null;
+    public Task updateTaskById(Long id, Task updatedTask) {
+        for (int i = 0; i < taskStore.size(); i++) {
+            Task existingTask = taskStore.get(i);
+            if (Objects.equals(existingTask.getId(), id)) {
+                if (updatedTask.getId() == null) {
+                    updatedTask.setId(existingTask.getId());
+                }
+                priorityScoreService.applyPriorityScore(updatedTask);
+                taskStore.set(i, updatedTask);
+                return updatedTask;
+            }
         }
-        Task existingTask = taskStore.get(index);
-        if (updatedTask.getId() == null) {
-            updatedTask.setId(existingTask.getId());
-        }
-        priorityScoreService.applyPriorityScore(updatedTask);
-        taskStore.set(index, updatedTask);
-        return updatedTask;
+        return null;
     }
 
     public boolean deleteTaskById(Long id) {

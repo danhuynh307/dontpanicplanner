@@ -39,9 +39,9 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @PutMapping("/{index}")
-    public ResponseEntity<Task> updateTask(@PathVariable int index, @RequestBody Task updatedTask) {
-        Task task = taskService.updateTask(index, updatedTask);
+    @PutMapping("/{id}")
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
+        Task task = taskService.updateTaskById(id, updatedTask);
         if (task == null) {
             return ResponseEntity.notFound().build();
         }
